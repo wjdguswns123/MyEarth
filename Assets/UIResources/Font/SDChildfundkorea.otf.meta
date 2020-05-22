@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: 88217e9f9f8333644b22f7b1c6206dc4
+timeCreated: 1525255488
+licenseType: Free
+TrueTypeFontImporter:
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - Sandoll Childfundkorea
+  fallbackFontReferences: []
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

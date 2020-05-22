@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: 87e2f2b90d1fc0e4eaeea045d92e1b36
+timeCreated: 1525255487
+licenseType: Free
+TrueTypeFontImporter:
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - Sandoll Childfundkorea TTF
+  fallbackFontReferences: []
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
