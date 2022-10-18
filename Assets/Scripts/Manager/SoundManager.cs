@@ -136,7 +136,7 @@ public class SoundManager : Singleton<SoundManager>
         int count = _audioSourceList.Length;
         for (int i = 0; i < count; ++i)
         {
-            if (_audioSourceList[i].clip.Equals(clip))
+            if (_audioSourceList[i].clip != null && _audioSourceList[i].clip.Equals(clip))
             {
                 return i;
             }
