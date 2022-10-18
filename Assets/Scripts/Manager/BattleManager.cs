@@ -228,28 +228,31 @@ public class BattleManager : Singleton<BattleManager>
     /// <returns></returns>
     public AttackPoint SearchAttackPoint(Enemy enemy)
     {
-        int index = -1;
-        float minLength = -1f;
-
+        AttackPoint result = null;
+        float minLength = 0f;
         for (int i = 0; i < attackPoints.Length; ++i)
         {
-            if (attackPoints[i].IsArriveEnemy())
+            var atkPoint = attackPoints[i];
+            if (atkPoint.IsArriveEnemy())
             {
                 continue;
             }
 
-            float dist = Vector3.Distance(enemy.transform.position, attackPoints[i].transform.position);
-            if (minLength == -1f || minLength > dist)
+            float dist = Vector3.SqrMagnitude(enemy.transform.position - atkPoint.transform.position);
+            if(result == null || minLength * minLength > dist)
             {
+                result = atkPoint;
                 minLength = dist;
-                index = i;
             }
         }
-
-        return index >= 0 ? attackPoints[index] : null;
+        return result;
     }
 
-    //해당 공격 지점에 적이 도달하여 해당 지점을 목표로 가지던 모든 적에게 알림.
+    /// <summary>
+    /// 해당 공격 지점에 적이 도달하여 해당 지점을 목표로 가지던 모든 적에게 알림.
+    /// </summary>
+    /// <param name="enemy"></param>
+    /// <param name="point"></param>
     public void ArrivalAttackPoint(Enemy enemy, AttackPoint point)
     {
         for (int i = 0; i < attackPoints.Length; ++i)
@@ -267,26 +270,58 @@ public class BattleManager : Singleton<BattleManager>
         }
     }
 
-    //가장 가까운 적 찾기.
-    public Transform SearchNearEnemy(Transform searcher, float range)
+    /// <summary>
+    /// 가장 가까운 적 찾기.
+    /// </summary>
+    /// <param name="searcher"></param>
+    /// <param name="range"></param>
+    /// <returns></returns>
+    public Enemy SearchNearEnemy(Transform searcher, float range)
     {
-        int index = -1;
-        float minLength = -1f;
-
-        for(int i = 0; i < _liveEnemyList.Count; ++i)
+        Enemy result = null;
+        float minLength = 0f;
+        for (int i = 0; i < _liveEnemyList.Count; ++i)
         {
-            float dist = Vector3.Distance(searcher.transform.position, _liveEnemyList[i].transform.position);
-            if(range >= dist && (minLength == -1f || minLength > dist))
+            var enemy = _liveEnemyList[i];
+            float dist = Vector3.SqrMagnitude(searcher.transform.position - enemy.transform.position);
+            if (range * range >= dist && (result == null || minLength * minLength > dist))
             {
+                result = enemy;
                 minLength = dist;
-                index = i;
             }
         }
-
-        return index >= 0 ? _liveEnemyList[index].transform : null;
+        return result;
     }
 
-    //현재 살아있는 적 리스트에서 해당 적 제거.
+    /// <summary>
+    /// 해당 인덱스의 공격 지점과 가장 가까운 이동중인 적 탐색.
+    /// </summary>
+    /// <param name="atkIndex"></param>
+    /// <returns></returns>
+    private Enemy SearchNearMovingEnemy(AttackPoint attackPoint)
+    {
+        Enemy result = null;
+        float minLength = 0f;
+        for (int i = 0; i < _liveEnemyList.Count; ++i)
+        {
+            var enemy = _liveEnemyList[i];
+            if (enemy.State == DefEnum.EnemyState.MOVE)
+            {
+                float dist = Vector3.SqrMagnitude(attackPoint.transform.position - enemy.transform.position);
+                if (result == null || minLength * minLength > dist)
+                {
+                    result = enemy;
+                    minLength = dist;
+                }
+            }   
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// 현재 살아있는 적 리스트에서 해당 적 제거.
+    /// </summary>
+    /// <param name="enemy"></param>
     public void RemoveEnemy(Enemy enemy)
     {
         if(_liveEnemyList.Contains(enemy))
@@ -301,7 +336,7 @@ public class BattleManager : Singleton<BattleManager>
             if (atkPoint.IsArriveThisEnemy(enemy))
             {
                 atkPoint.Clear();
-                Enemy result = SearchNearEnemy(i);
+                Enemy result = SearchNearMovingEnemy(atkPoint);
                 if (result != null)
                 {
                     result.ResetDestinationAttackPoint(atkPoint);
@@ -311,117 +346,29 @@ public class BattleManager : Singleton<BattleManager>
         }
     }
 
-    //해당 인덱스의 공격 지점과 가장 가까운 적 탐색.
-    Enemy SearchNearEnemy(int atkIndex)
-    {
-        int index = -1;
-        float minLength = -1f;
-        for(int i = 0; i < _liveEnemyList.Count; ++i)
-        {
-            if(_liveEnemyList[i].State == DefEnum.EnemyState.MOVE)
-            {
-                float dist = Vector3.Distance(_liveEnemyList[i].transform.position, attackPoints[atkIndex].transform.position);
-                if(minLength == -1f || minLength > dist)
-                {
-                    minLength = dist;
-                    index = i;
-                }
-            }
-        }
-
-        return index >= 0 ? _liveEnemyList[index] : null;
-    }
-
-    //점수 추가.
+    /// <summary>
+    /// 점수 추가.
+    /// </summary>
+    /// <param name="score"></param>
     public void AddScore(int score)
     {
         _currentScore += score;
         ingameUI.SetScore(_currentScore);
     }
 
-    //획득 자원 추가.
+    /// <summary>
+    /// 획득 자원 추가.
+    /// </summary>
+    /// <param name="resources"></param>
     public void AddResources(int resources)
     {
         _currentResources += resources;
         ingameUI.SetResources(_currentResources, _upgradeCost);
     }
 
-    //전방 범위 공격. 해당 각도와 거리 안에 있는 적 공격.
-    public void AngleRangeAttack(Transform atker, float angleRange, float range, int atk)
-    {
-        List<Enemy> attackedList = new List<Enemy>();
-        for(int i = 0; i < _liveEnemyList.Count; ++i)
-        {
-            float dist = Vector3.Distance(_liveEnemyList[i].transform.position, atker.transform.position);
-            float angle = Vector3.Angle(atker.forward, _liveEnemyList[i].transform.position - atker.position);
-            if (angle <= angleRange / 2f && dist <= range)
-            {
-                //공격 대상 리스트를 따로 만들어서 우선 저장.
-                attackedList.Add(_liveEnemyList[i]);
-            }
-        }
-
-        //해당 공격으로 파괴되어도 배열 반복에 지장이 없도록 하기 위해 리스트 뒤에서부터 공격 처리.
-        for(int j = attackedList.Count - 1; j >= 0; --j)
-        {
-            attackedList[j].Attacked(atk);
-        }
-    }
-
-    //전방 직선 공격. 전방 거리/가로 범위 안의 적 전체 공격. 맞은 적이 있으면 true 반환.
-    public bool FrontRangeAttack(Transform atker, float range, float length, int atk)
-    {
-        List<Enemy> attackedList = new List<Enemy>();
-        for(int i = 0; i < _liveEnemyList.Count; ++i)
-        {
-            Vector3 toEnemyVec = _liveEnemyList[i].transform.position - atker.position;
-            float hDist = Mathf.Sin(Vector3.Angle(atker.forward, toEnemyVec) * Mathf.Deg2Rad) * toEnemyVec.magnitude;
-            float vDist = Mathf.Cos(Vector3.Angle(atker.forward, toEnemyVec) * Mathf.Deg2Rad) * toEnemyVec.magnitude;
-            bool front = Vector3.Dot(atker.forward, toEnemyVec) / toEnemyVec.magnitude >= 0;
-            if(front && hDist <= range / 2f && vDist <= length)
-            {
-                //공격 대상 리스트를 따로 만들어서 우선 저장.
-                attackedList.Add(_liveEnemyList[i]);
-            }
-        }
-
-        bool result = attackedList.Count > 0;
-
-        //해당 공격으로 파괴되어도 배열 반복에 지장이 없도록 하기 위해 리스트 뒤에서부터 공격 처리.
-        for (int j = attackedList.Count - 1; j >= 0; --j)
-        {
-            attackedList[j].Attacked(atk);
-        }
-
-        return result;
-    }
-
-    //원형 범위 공격. range 지름으로 하는 원형 범위 안의 적 전체 공격. 맞은 적이 있으면 true 반환.
-    public bool CircleRangeAttack(Transform atker, float range, int atk)
-    {
-        List<Enemy> attackedList = new List<Enemy>();
-        for (int i = 0; i < _liveEnemyList.Count; ++i)
-        {
-            float toEnemyDist = (_liveEnemyList[i].transform.position - atker.position).magnitude;
-            if(toEnemyDist <= range / 2f)
-            {
-                //공격 대상 리스트를 따로 만들어서 우선 저장.
-                attackedList.Add(_liveEnemyList[i]);
-            }
-        }
-
-        bool result = attackedList.Count > 0;
-
-        //해당 공격으로 파괴되어도 배열 반복에 지장이 없도록 하기 위해 리스트 뒤에서부터 공격 처리.
-        for (int j = attackedList.Count - 1; j >= 0; --j)
-        {
-            attackedList[j].Attacked(atk);
-        }
-
-        return result;
-    }
-
-    //게임 도중 강제 종료.
+    /// <summary>
+    /// 게임 도중 강제 종료.
+    /// </summary>
     public void ForcedEnd()
     {
         planet.ForcedEnd();
@@ -514,6 +461,81 @@ public class BattleManager : Singleton<BattleManager>
                 break;
             }
         }
+    }
+
+    //전방 범위 공격. 해당 각도와 거리 안에 있는 적 공격.
+    public void AngleRangeAttack(Transform atker, float angleRange, float range, int atk)
+    {
+        List<Enemy> attackedList = new List<Enemy>();
+        for (int i = 0; i < _liveEnemyList.Count; ++i)
+        {
+            float dist = Vector3.Distance(_liveEnemyList[i].transform.position, atker.transform.position);
+            float angle = Vector3.Angle(atker.forward, _liveEnemyList[i].transform.position - atker.position);
+            if (angle <= angleRange / 2f && dist <= range)
+            {
+                //공격 대상 리스트를 따로 만들어서 우선 저장.
+                attackedList.Add(_liveEnemyList[i]);
+            }
+        }
+
+        //해당 공격으로 파괴되어도 배열 반복에 지장이 없도록 하기 위해 리스트 뒤에서부터 공격 처리.
+        for (int j = attackedList.Count - 1; j >= 0; --j)
+        {
+            attackedList[j].Attacked(atk);
+        }
+    }
+
+    //전방 직선 공격. 전방 거리/가로 범위 안의 적 전체 공격. 맞은 적이 있으면 true 반환.
+    public bool FrontRangeAttack(Transform atker, float range, float length, int atk)
+    {
+        List<Enemy> attackedList = new List<Enemy>();
+        for (int i = 0; i < _liveEnemyList.Count; ++i)
+        {
+            Vector3 toEnemyVec = _liveEnemyList[i].transform.position - atker.position;
+            float hDist = Mathf.Sin(Vector3.Angle(atker.forward, toEnemyVec) * Mathf.Deg2Rad) * toEnemyVec.magnitude;
+            float vDist = Mathf.Cos(Vector3.Angle(atker.forward, toEnemyVec) * Mathf.Deg2Rad) * toEnemyVec.magnitude;
+            bool front = Vector3.Dot(atker.forward, toEnemyVec) / toEnemyVec.magnitude >= 0;
+            if (front && hDist <= range / 2f && vDist <= length)
+            {
+                //공격 대상 리스트를 따로 만들어서 우선 저장.
+                attackedList.Add(_liveEnemyList[i]);
+            }
+        }
+
+        bool result = attackedList.Count > 0;
+
+        //해당 공격으로 파괴되어도 배열 반복에 지장이 없도록 하기 위해 리스트 뒤에서부터 공격 처리.
+        for (int j = attackedList.Count - 1; j >= 0; --j)
+        {
+            attackedList[j].Attacked(atk);
+        }
+
+        return result;
+    }
+
+    //원형 범위 공격. range 지름으로 하는 원형 범위 안의 적 전체 공격. 맞은 적이 있으면 true 반환.
+    public bool CircleRangeAttack(Transform atker, float range, int atk)
+    {
+        List<Enemy> attackedList = new List<Enemy>();
+        for (int i = 0; i < _liveEnemyList.Count; ++i)
+        {
+            float toEnemyDist = (_liveEnemyList[i].transform.position - atker.position).magnitude;
+            if (toEnemyDist <= range / 2f)
+            {
+                //공격 대상 리스트를 따로 만들어서 우선 저장.
+                attackedList.Add(_liveEnemyList[i]);
+            }
+        }
+
+        bool result = attackedList.Count > 0;
+
+        //해당 공격으로 파괴되어도 배열 반복에 지장이 없도록 하기 위해 리스트 뒤에서부터 공격 처리.
+        for (int j = attackedList.Count - 1; j >= 0; --j)
+        {
+            attackedList[j].Attacked(atk);
+        }
+
+        return result;
     }
 
     ////공격 지점 기즈모 표시.

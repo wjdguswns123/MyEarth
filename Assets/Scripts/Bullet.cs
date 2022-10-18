@@ -22,7 +22,11 @@ public class Bullet : MonoBehaviour, InteractiveObject
                 mover = new LinearMove(transform, info.speed);
                 break;
             case Def.DefEnum.MoveType.GUIDED:
-                mover = new GuidedMove(transform, BattleManager.Instance.SearchNearEnemy(transform, info.range), info.speed, info.range);
+                {
+                    var destEnemy = BattleManager.Instance.SearchNearEnemy(transform, info.range);
+                    var dest = destEnemy != null ? destEnemy.transform : null;
+                    mover = new GuidedMove(transform, dest, info.speed, info.range);
+                }
                 break;
         }
         weaponInfo = info;

@@ -18,7 +18,8 @@ public class GuidedMove : Move
         //목표가 있으면 목표를 향해서 방향을 잡고, 없으면 목표를 찾기 시도.
         if(destination == null)
         {
-            destination = BattleManager.Instance.SearchNearEnemy(moveTransform, range);
+            var destEnemy = BattleManager.Instance.SearchNearEnemy(moveTransform, range);
+            destination = destEnemy != null ? destEnemy.transform : null;
         }
         else
         {
