@@ -19,7 +19,7 @@ public class ExitUI : MonoBehaviour
         UIManager.Instance.ClosePopupUI();
         if (BattleManager.Instance.GameState == Def.DefEnum.GameState.PAUSE)
         {
-            BattleManager.Instance.Play();
+            BattleManager.Instance.Resume();
         }
     }
 }

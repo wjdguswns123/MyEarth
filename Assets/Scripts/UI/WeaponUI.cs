@@ -6,8 +6,11 @@ public class WeaponUI : MonoBehaviour
 {
     public UIGrid listGrid;
 
-    private void Start()
+    private System.Action _onSelect;
+
+    public void Set(System.Action onSelect)
     {
+        _onSelect = onSelect;
         SetWeaponList();
     }
 
@@ -30,7 +33,8 @@ public class WeaponUI : MonoBehaviour
     public void CloseUI()
     {
         //UI 닫을 때 게임 다시 실행.
-        BattleManager.Instance.ShowTutorial();
+        _onSelect?.Invoke();
+        //BattleManager.Instance.ShowTutorial();
         UIManager.Instance.ClosePopupUI();
     }
 }

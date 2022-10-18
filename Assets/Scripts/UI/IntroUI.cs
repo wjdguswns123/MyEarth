@@ -17,7 +17,7 @@ public class IntroUI : MonoBehaviour
     //시작 버튼 클릭 처리.
     public void OnStartBtnClick()
     {
-        BattleManager.Instance.GameStart();
+        BattleManager.Instance.StartProcess();
         //튜토리얼 안봤으면 튜토리얼 출력.
         if(!DataManager.Instance.playedTutorial)
         {

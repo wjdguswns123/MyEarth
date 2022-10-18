@@ -7,7 +7,7 @@ public class PauseUI : MonoBehaviour
     public void OnContinueBtnClick()
     {
         UIManager.Instance.ClosePopupUI();
-        BattleManager.Instance.Play();
+        BattleManager.Instance.Resume();
     }
     
     //메인 메뉴 버튼 클릭.

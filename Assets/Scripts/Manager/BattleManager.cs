@@ -27,28 +27,191 @@ public class BattleManager : Singleton<BattleManager>
     private int _mainWeaponID;
     private bool _isGameResult;
 
-    public void Awake()
+    public void Init()
     {
         //더블 터치로 전략무기 발사 가능 로컬에 저장된 값을 불러온다.
         IsEnableDlbTouchFire = PlayerPrefs.GetInt("OnDblTouchFire") != 0;
+
+        //인트로 화면 출력.
+        GameState = DefEnum.GameState.INTRO;
+        UIManager.Instance.LoadUI("IntroUI");
     }
 
-    public void Init()
+    /// <summary>
+    /// 인게임 프로세스 시작.
+    /// </summary>
+    public void StartProcess()
     {
-        if(_liveEnemyList == null)
+        if (_liveEnemyList == null)
         {
             _liveEnemyList = new List<Enemy>();
         }
         _liveEnemyList.Clear();
 
         _arrivalEnemyAtkPoints = new Enemy[attackPoints.Length];
-        for(int i = 0; i < _arrivalEnemyAtkPoints.Length; ++i)
+        for (int i = 0; i < _arrivalEnemyAtkPoints.Length; ++i)
         {
             _arrivalEnemyAtkPoints[i] = null;
         }
 
-        //인트로 화면 출력.
+        if (ingameUI == null)
+        {
+            ingameUI = UIManager.Instance.LoadUI("IngameUI").GetComponent<IngameUI>();
+        }
+        else
+        {
+            ingameUI.gameObject.SetActive(true);
+        }
+
+        planet.Init();
+        _currentScore = 0;
+        _currentResources = 0;
+        _upgradeCost = 0;
+        _upgradeLV = 1;
+
+        SetMainWeaponID();
+        GetUpgradeCost();
+
+        ingameUI.SetScore(_currentScore);
+        ingameUI.SetResources(_currentResources, _upgradeCost);
+
+        SpawnManager.Instance.Init();
+        EffectManager.Instance.InitIngameEffects();
+
+        SelectWeapon();
+    }
+
+    /// <summary>
+    /// 무기 선택 진행.
+    /// </summary>
+    private void SelectWeapon()
+    {
+        Debug.Log("BattleManager SelectWeapon");
+
+        GameState = DefEnum.GameState.SELECT_WEAPON;
+
+        //시작할 때 무기 선택 창 열기.
+        var weaponUI = UIManager.Instance.LoadPopupUI("WeaponUI").GetComponent<WeaponUI>();
+        weaponUI.Set(() =>
+        {
+            GamePlayStart();
+        });
+    }
+
+    /// <summary>
+    /// 게임 플레이 시작.
+    /// </summary>
+    private void GamePlayStart()
+    {
+        Debug.Log("BattleManager GamePlayStart");
+
+        if (!DataManager.Instance.playedTutorial)
+        {
+            ShowTutorial();
+        }
+        else
+        {
+            //튜토리얼 봤으면 바로 게임 진행.
+            Play();
+        }
+    }
+
+    /// <summary>
+    /// 인게임 튜토리얼 출력.
+    /// </summary>
+    private void ShowTutorial()
+    {
+        Debug.Log("BattleManager ShowTutorial");
+
+        GameState = DefEnum.GameState.TUTORIAL;
+        IngameSceneManager.Instance.PlayIngameScene("Tutorial_02", EndTutorial);
+    }
+
+    /// <summary>
+    /// 튜토리얼 종료 설정.
+    /// </summary>
+    private void EndTutorial()
+    {
+        Debug.Log("BattleManager EndTutorial");
+
+        DataManager.Instance.playedTutorial = true;
+        PlayerPrefs.SetInt("PlayedTutorial", 1);    //로컬에 튜토리얼 완료 값 저장.
+        Play();
+    }
+
+    /// <summary>
+    /// 게임 플레이.
+    /// </summary>
+    private void Play()
+    {
+        Debug.Log("BattleManager Play");
+        GameState = DefEnum.GameState.PLAY;
+    }
+
+    /// <summary>
+    /// 게임 일시 정지.
+    /// </summary>
+    public void Pause()
+    {
+        GameState = DefEnum.GameState.PAUSE;
+        EffectManager.Instance.Pause();
+        SoundManager.Instance.Pause();
+    }
+
+    /// <summary>
+    /// 게임 일시 정지 해제.
+    /// </summary>
+    public void Resume()
+    {
+        GameState = DefEnum.GameState.PLAY;
+        EffectManager.Instance.Resume();
+        SoundManager.Instance.Resume();
+    }
+
+    /// <summary>
+    /// 게임 종료 처리.
+    /// </summary>
+    /// <param name="success"></param>
+    public void GameEnd(bool success)
+    {
+        Debug.Log("BattleManager GameEnd");
+
+        GameState = DefEnum.GameState.END;
+        EffectManager.Instance.Pause();
+        IngameSceneManager.Instance.PlayIngameScene(success ? "Clear" : "Defeat", ShowResultUI);
+        _isGameResult = success;
+        _currentScore += planet.CurrentHP * 50;
+    }
+
+    /// <summary>
+    /// 결과창 출력.
+    /// </summary>
+    private void ShowResultUI()
+    {
+        ResultUI ui = UIManager.Instance.LoadPopupUI("ResultUI").GetComponent<ResultUI>();
+        ui.Init(_isGameResult, _currentScore);
+
+        if (DataManager.Instance.bestScore < _currentScore)
+        {
+            DataManager.Instance.bestScore = _currentScore;
+            PlayerPrefs.SetInt("BestScore", _currentScore);
+        }
+    }
+
+    /// <summary>
+    /// 인트로 화면으로 전환.
+    /// </summary>
+    public void GoIntro()
+    {
+        DataManager.Instance.ClearEnemyLevelDataList();
+        EffectManager.Instance.ClearEffectList();
+        SoundManager.Instance.AllSFXStop();
+        ResourceManager.Instance.ClearObjectPools();
+        ClearEnemyList();
+        planet.Clear();
+
         GameState = DefEnum.GameState.INTRO;
+        ingameUI.gameObject.SetActive(false);
         UIManager.Instance.LoadUI("IntroUI");
     }
 
@@ -254,115 +417,6 @@ public class BattleManager : Singleton<BattleManager>
         }
 
         return result;
-    }
-    
-    //게임 시작. 무기 선택 부터 시작.
-    public void GameStart()
-    {
-        GameState = DefEnum.GameState.SELECT_WEAPON;
-
-        if (ingameUI == null)
-        {
-            ingameUI = UIManager.Instance.LoadUI("IngameUI").GetComponent<IngameUI>();
-        }
-        else
-        {
-            ingameUI.gameObject.SetActive(true);
-        }
-
-        planet.Init();
-        _currentScore = 0;
-        _currentResources = 0;
-        _upgradeCost = 0;
-        _upgradeLV = 1;
-        SetMainWeaponID();
-        GetUpgradeCost();
-
-        ingameUI.SetScore(_currentScore);
-        ingameUI.SetResources(_currentResources, _upgradeCost);
-
-        SpawnManager.Instance.Init();
-        EffectManager.Instance.InitIngameEffects();
-
-        //시작할 때 무기 선택 창 열기.
-        UIManager.Instance.LoadPopupUI("WeaponUI");
-    }
-
-    //게임 일시 정지.
-    public void Pause()
-    {
-        GameState = DefEnum.GameState.PAUSE;
-        EffectManager.Instance.Pause();
-        SoundManager.Instance.Pause();
-    }
-
-    //게임 일시 정지 해제.
-    public void Play()
-    {
-        GameState = DefEnum.GameState.PLAY;
-        EffectManager.Instance.Resume();
-        SoundManager.Instance.Resume();
-    }
-
-    //인게임 튜토리얼 출력.
-    public void ShowTutorial()
-    {
-        //이미 튜토리얼 봤으면 바로 게임 진행.
-        if(DataManager.Instance.playedTutorial)
-        {
-            Play();
-            return;
-        }
-
-        GameState = DefEnum.GameState.TUTORIAL;
-        IngameSceneManager.Instance.PlayIngameScene("Tutorial_02", EndTutorial);
-    }
-
-    //튜토리얼 종료 설정.
-    //로컬에 튜토리얼 완료 값 저장.
-    void EndTutorial()
-    {
-        DataManager.Instance.playedTutorial = true;
-        PlayerPrefs.SetInt("PlayedTutorial", 1);
-        Play();
-    }
-
-    //게임 종료 처리.
-    public void GameEnd(bool success)
-    {
-        GameState = DefEnum.GameState.END;
-        EffectManager.Instance.Pause();
-        IngameSceneManager.Instance.PlayIngameScene(success ? "Clear" : "Defeat", ShowResultUI);
-        _isGameResult = success;
-        _currentScore += planet.CurrentHP * 50;
-    }
-
-    //결과창 출력.
-    void ShowResultUI()
-    {
-        ResultUI ui = UIManager.Instance.LoadPopupUI("ResultUI").GetComponent<ResultUI>();
-        ui.Init(_isGameResult, _currentScore);
-
-        if (DataManager.Instance.bestScore < _currentScore)
-        {
-            DataManager.Instance.bestScore = _currentScore;
-            PlayerPrefs.SetInt("BestScore", _currentScore);
-        }
-    }
-
-    //인트로 화면으로 전환.
-    public void GoIntro()
-    {
-        DataManager.Instance.ClearEnemyLevelDataList();
-        EffectManager.Instance.ClearEffectList();
-        SoundManager.Instance.AllSFXStop();
-        ResourceManager.Instance.ClearObjectPools();
-        ClearEnemyList();
-        planet.Clear();
-
-        GameState = DefEnum.GameState.INTRO;
-        ingameUI.gameObject.SetActive(false);
-        UIManager.Instance.LoadUI("IntroUI");
     }
 
     //게임 도중 강제 종료.
