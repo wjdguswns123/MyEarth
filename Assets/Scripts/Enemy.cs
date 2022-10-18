@@ -23,6 +23,8 @@ public class Enemy : MonoBehaviour, InteractiveObject
     bool                      playedSound = false;
     InfoEnemy                 enemyInfo;
 
+    private GameObject _attackEffect;
+
     private void Start()
     {
         //일반 이동, 행성 근접했을 때, 목적지 없을 때 이동 클래스 설정.
@@ -150,7 +152,14 @@ public class Enemy : MonoBehaviour, InteractiveObject
             firePosition.DestroyChildren();
         }
         //Destroy(gameObject);
-        ResourceManager.Instance.DestroyObject(enemyInfo.prefabPath, gameObject);
+        //ResourceManager.Instance.DestroyObject(enemyInfo.prefabPath, gameObject);
+        gameObject.SetActive(false);
+
+        if(_attackEffect != null)
+        {
+            _attackEffect.SetActive(false);
+            _attackEffect = null;
+        }
     }
 
     //목적지에 이미 다른 적이 도착했으면 새로운 목적지 탐색.
@@ -188,7 +197,7 @@ public class Enemy : MonoBehaviour, InteractiveObject
             state = DefEnum.EnemyState.ATTACK;
             transform.rotation = Quaternion.LookRotation((planet.planetBody.transform.position - transform.position), Vector3.forward);
             BattleManager.Instance.ArrivalAttackPoint(this, destAttackPoint);
-            EffectManager.Instance.LoadEffect("Attack_01", firePosition);
+            _attackEffect = EffectManager.Instance.LoadEffect("Attack_01", firePosition.position, firePosition.rotation);
 
             return true;
         }

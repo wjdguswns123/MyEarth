@@ -172,11 +172,11 @@ public class SubWeapon : MonoBehaviour
         lunchingBullet = null;
     }
 
-    //삭제될 때 리소스 매니저의 리스트에서 해당 무기의 탄환 오브젝트 해제 요청.
-    private void OnDestroy()
-    {
-        ResourceManager.Instance.DeleteResource(subWeaponInfo.bulletPath);
-    }
+    ////삭제될 때 리소스 매니저의 리스트에서 해당 무기의 탄환 오브젝트 해제 요청.
+    //private void OnDestroy()
+    //{
+    //    ResourceManager.Instance.DeleteResource(subWeaponInfo.bulletPath);
+    //}
 
     //외부에서 받아오는 발사 처리.
     public void Fire()

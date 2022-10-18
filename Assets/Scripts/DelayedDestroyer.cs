@@ -15,6 +15,7 @@ public class DelayedDestroyer : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
 
-        Destroy(gameObject);
+        //Destroy(gameObject);
+        gameObject.SetActive(false);
     }
 }

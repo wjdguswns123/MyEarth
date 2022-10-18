@@ -27,7 +27,7 @@ public class Turret : MonoBehaviour
         mainWeaponInfo = mainInfo;
         weaponLevel = 0;
 
-        ResourceManager.Instance.InitObjectPool(mainWeaponInfo.bulletPath);
+        ResourceManager.Instance.CreateObjectPool(mainWeaponInfo.bulletPath);
 
         if (!subInfo.weaponPath.Equals(""))
         {

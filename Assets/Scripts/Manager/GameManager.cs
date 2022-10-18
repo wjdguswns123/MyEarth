@@ -11,7 +11,6 @@ public class GameManager : MonoBehaviour
         InfoManager.Instance.Init();
         DataManager.Instance.Init();
         BattleManager.Instance.Init();
-        ResourceManager.Instance.PreLoadResources();
         SoundManager.Instance.PreLoadSound();
 
         playedTutorial = DataManager.Instance.playedTutorial;

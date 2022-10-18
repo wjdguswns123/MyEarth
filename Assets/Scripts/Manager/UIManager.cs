@@ -12,14 +12,22 @@ public class UIManager : Singleton<UIManager>
     //해당 이름의 UI 불러오기.
     public GameObject LoadUI(string uiName)
     {
-        return ResourceManager.Instance.LoadResource(string.Format("UI/{0}", uiName), transform);
+        //return ResourceManager.Instance.LoadResource(string.Format("UI/{0}", uiName), transform);
+        GameObject ui = Instantiate(Resources.Load<GameObject>(string.Format("UI/{0}", uiName)));
+        ui.transform.parent = transform;
+        ui.transform.localPosition = Vector3.zero;
+        ui.transform.localScale = Vector3.one;
+        return ui;
     }
 
     //해당 이름의 UI 불러와서 parent 자식으로 설정.
     public GameObject LoadUI(string uiName, Transform parent)
     {
-        GameObject ui = ResourceManager.Instance.LoadResource(string.Format("UI/{0}", uiName), transform);
+        //GameObject ui = ResourceManager.Instance.LoadResource(string.Format("UI/{0}", uiName), transform);
+        GameObject ui = Instantiate(Resources.Load<GameObject>(string.Format("UI/{0}", uiName)));
         ui.transform.parent = parent;
+        ui.transform.localPosition = Vector3.zero;
+        ui.transform.localScale = Vector3.one;
         return ui;
     }
 

@@ -69,7 +69,8 @@ public class Bullet : MonoBehaviour, InteractiveObject
         {
             //게임 종료되면 탄환 삭제.
             //Destroy(gameObject);
-            ResourceManager.Instance.DestroyObject(weaponInfo.bulletPath, gameObject);
+            //ResourceManager.Instance.DestroyObject(weaponInfo.bulletPath, gameObject);
+            gameObject.SetActive(false);
         }
     }
 
@@ -146,7 +147,8 @@ public class Bullet : MonoBehaviour, InteractiveObject
         }
 
         //Destroy(gameObject);
-        ResourceManager.Instance.DestroyObject(weaponInfo.bulletPath, gameObject);
+        //ResourceManager.Instance.DestroyObject(weaponInfo.bulletPath, gameObject);
+        gameObject.SetActive(false);
     }
 
     //private void OnDrawGizmos()

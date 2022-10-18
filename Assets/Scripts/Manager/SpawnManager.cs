@@ -72,7 +72,7 @@ public class SpawnManager : Singleton<SpawnManager>
 
         foreach(InfoEnemy info in InfoManager.Instance.infoEnemyList.Values)
         {
-            ResourceManager.Instance.InitObjectPool(info.prefabPath, 20, 5);
+            ResourceManager.Instance.CreateObjectPool(info.prefabPath, 20, 5);
         }
     }
 

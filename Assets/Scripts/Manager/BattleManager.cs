@@ -289,8 +289,8 @@ public class BattleManager : Singleton<BattleManager>
     public void Play()
     {
         gameState = DefEnum.GameState.PLAY;
-        EffectManager.Instance.Play();
-        SoundManager.Instance.Play();
+        EffectManager.Instance.Resume();
+        SoundManager.Instance.Resume();
     }
 
     //인게임 튜토리얼 출력.
@@ -345,7 +345,7 @@ public class BattleManager : Singleton<BattleManager>
         DataManager.Instance.ClearEnemyLevelDataList();
         EffectManager.Instance.ClearEffectList();
         SoundManager.Instance.AllSFXStop();
-        ResourceManager.Instance.EndUseObjectPool();
+        ResourceManager.Instance.ClearObjectPools();
         ClearEnemyList();
         planet.Clear();
 

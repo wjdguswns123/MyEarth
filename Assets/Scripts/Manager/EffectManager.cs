@@ -6,108 +6,94 @@ using System.IO;
 
 public class EffectManager : Singleton<EffectManager>
 {
-    List<GameObject> effectList = new List<GameObject>();
+    private const string EFFECT_PATH = "Effects/";
 
+    private List<Effect> _effectList = new List<Effect>();
+
+    /// <summary>
+    /// 인게임 이펙트 초기화.
+    /// </summary>
     public void InitIngameEffects()
     {
-        string path = Application.dataPath + "/Resources/Effects";
-
-        if (!Directory.Exists(path))
-        {
-            //해당 경로 없으면 종료.
-            return;
-        }
-
-        DirectoryInfo info = new DirectoryInfo(path);
-
-        //에셋 번들 파일만 골라낸 파일 배열.
-        FileInfo[] files = info.GetFiles().Where(f => (f.Extension != ".meta")).ToArray();
-
-        foreach (FileInfo file in files)
-        {
-            string filename = "Effects/" + file.Name.Replace(".prefab", "");
-            ResourceManager.Instance.InitObjectPool(filename, 5);
-        }
+        ResourceManager.Instance.CreateObjectsPool(EFFECT_PATH, 5);
     }
 
-    //이펙트 이름, 생성될 위치, 회전값을 받아 이펙트 생성.
+    /// <summary>
+    /// 이펙트 이름, 생성될 위치, 회전값을 받아 이펙트 생성.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="pos"></param>
+    /// <param name="rot"></param>
+    /// <returns></returns>
     public GameObject LoadEffect(string name, Vector3 pos, Quaternion rot)
     {
-        string path = string.Format("Effects/{0}", name);
-        GameObject effect = ResourceManager.Instance.LoadResource(path, pos, rot);
-        effect.AddComponent<Effect>();
-        effectList.Add(effect);
-        return effect;
+        string path = EFFECT_PATH + name;
+        GameObject effectObj = ResourceManager.Instance.LoadResource(path, pos, rot);
+        var effect = effectObj.GetComponent<Effect>();
+        _effectList.Add(effect);
+        return effectObj;
     }
 
-    //이펙트 이름, 생성 시 상위 객체 받아 이펙트 생성.
+    /// <summary>
+    /// 이펙트 이름, 생성 시 상위 객체 받아 이펙트 생성.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="parent"></param>
+    /// <returns></returns>
     public GameObject LoadEffect(string name, Transform parent)
     {
-        string path = string.Format("Effects/{0}", name);
-        GameObject effect = ResourceManager.Instance.LoadResource(path, parent);
-        effect.AddComponent<Effect>();
-        effectList.Add(effect);
-        return effect;
+        string path = EFFECT_PATH + name;
+        GameObject effectObj = ResourceManager.Instance.LoadResource(path, parent);
+        var effect = effectObj.GetComponent<Effect>();
+        _effectList.Add(effect);
+        return effectObj;
     }
 
-    //전체 이펙트 움직임 정지.
+    /// <summary>
+    /// 현재 재생중인 이펙트 일시정지.
+    /// </summary>
     public void Pause()
     {
-        int count = effectList.Count;
+        int count = _effectList.Count;
         for(int i = 0; i < count; ++i)
         {
-            UITweener[] tps = effectList[i].GetComponentsInChildren<UITweener>();
-            for(int j = 0; j < tps.Length; ++j)
-            {
-                tps[j].Pause();
-            }
-
-            ParticleSystem[] particles = effectList[i].GetComponentsInChildren<ParticleSystem>();
-            for (int k = 0; k < particles.Length; ++k)
-            {
-                particles[k].Pause();
-            }
+            _effectList[i].Pause();
         }
     }
 
-    //전체 이펙트 움직임 정지 해제.
-    public void Play()
+    /// <summary>
+    /// 현재 재생중인 이펙트 일시정지 해제.
+    /// </summary>
+    public void Resume()
     {
-        int count = effectList.Count;
+        int count = _effectList.Count;
         for(int i = 0; i < count; ++i)
         {
-            UITweener[] tps = effectList[i].GetComponentsInChildren<UITweener>();
-            for(int j = 0; j < tps.Length; ++j)
-            {
-                tps[j].PauseEnd();
-            }
-
-            ParticleSystem[] particles = effectList[i].GetComponentsInChildren<ParticleSystem>();
-            for (int k = 0; k < particles.Length; ++k)
-            {
-                particles[k].Play();
-            }
+            _effectList[i].Resume();
         }
     }
 
-    //해당 이펙트 리스트에서 제거.
-    public void RemoveEffect(GameObject obj)
+    /// <summary>
+    /// 해당 이펙트 리스트에서 제거.
+    /// </summary>
+    /// <param name="eff"></param>
+    public void RemoveEffect(Effect eff)
     {
-        if(effectList.Contains(obj))
+        if(eff != null && _effectList.Contains(eff))
         {
-            effectList.Remove(obj);
+            _effectList.Remove(eff);
         }
     }
 
-    //현재 생성되어 있는 이펙트 모두 제거.
+    /// <summary>
+    /// 현재 출력 중인 이펙트 모두 제거.
+    /// </summary>
     public void ClearEffectList()
     {
-        int count = effectList.Count;
+        int count = _effectList.Count;
         for(int i = count - 1; i >= 0; --i)
         {
-            GameObject effect = effectList[i];
-            effectList.RemoveAt(i);
-            Destroy(effect);
+            _effectList.RemoveAt(i);
         }
     }
 }
