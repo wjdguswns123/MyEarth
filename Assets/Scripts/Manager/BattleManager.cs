@@ -5,46 +5,57 @@ using Def;
 
 public class BattleManager : Singleton<BattleManager>
 {
-    public IngameUI         ingameUI;
-    public Planet           planet;
-    public GameObject[]     attackPoints = new GameObject[4];     //목적지 배열.
-    Enemy[]                 arrivalEnemyAtkPoints;                //목적지에 도착한 적 배열.
-    List<Enemy>             liveEnemyList = new List<Enemy>();
-    int                     currentScore;
-    int                     currentResources;
-    int                     upgradeCost = 0;
-    int                     upgradeLV = 1;
-    int                     mainWeaponID = 0;
-    bool                    isGameResult;
-    bool                    isEnableDlbTouchFire;
-    public bool             IsEnableDlbTouchFire { get { return isEnableDlbTouchFire; } set { isEnableDlbTouchFire = value; } }
+    #region Inspector
 
-    DefEnum.GameState        gameState;
-    public DefEnum.GameState GameState { get { return gameState; } set { gameState = value; } }
+    public IngameUI ingameUI;
+    public Planet planet;
+    public GameObject[] attackPoints;     //목적지 배열.
+
+    #endregion
+
+    public DefEnum.GameState GameState { get; private set; }
+
+    public bool IsEnableDlbTouchFire { get; private set; }
+
+    private List<Enemy> _liveEnemyList;
+    private Enemy[] _arrivalEnemyAtkPoints; //목적지에 도착한 적 배열.
+    
+    private int _currentScore;
+    private int _currentResources;
+    private int _upgradeCost;
+    private int _upgradeLV;
+    private int _mainWeaponID;
+    private bool _isGameResult;
 
     public void Awake()
     {
         //더블 터치로 전략무기 발사 가능 로컬에 저장된 값을 불러온다.
-        isEnableDlbTouchFire = PlayerPrefs.GetInt("OnDblTouchFire") != 0;
+        IsEnableDlbTouchFire = PlayerPrefs.GetInt("OnDblTouchFire") != 0;
     }
 
     public void Init()
     {
-        arrivalEnemyAtkPoints = new Enemy[attackPoints.Length];
-        for(int i = 0; i < arrivalEnemyAtkPoints.Length; ++i)
+        if(_liveEnemyList == null)
         {
-            arrivalEnemyAtkPoints[i] = null;
+            _liveEnemyList = new List<Enemy>();
+        }
+        _liveEnemyList.Clear();
+
+        _arrivalEnemyAtkPoints = new Enemy[attackPoints.Length];
+        for(int i = 0; i < _arrivalEnemyAtkPoints.Length; ++i)
+        {
+            _arrivalEnemyAtkPoints[i] = null;
         }
 
         //인트로 화면 출력.
-        gameState = DefEnum.GameState.INTRO;
+        GameState = DefEnum.GameState.INTRO;
         UIManager.Instance.LoadUI("IntroUI");
     }
 
     //현재 살아있는 적 리스트에 적 추가.
     public GameObject AddEnemy(Enemy enemy)
     {
-        liveEnemyList.Add(enemy);
+        _liveEnemyList.Add(enemy);
 
         //목적지 검색해서 반환.
         return SearchAttackPoint(enemy);
@@ -58,7 +69,7 @@ public class BattleManager : Singleton<BattleManager>
 
         for(int i = 0; i < attackPoints.Length; ++i)
         {
-            if(arrivalEnemyAtkPoints[i] != null)
+            if(_arrivalEnemyAtkPoints[i] != null)
             {
                 continue;
             }
@@ -81,11 +92,11 @@ public class BattleManager : Singleton<BattleManager>
         {
             if(attackPoints[i] == point)
             {
-                arrivalEnemyAtkPoints[i] = enemy;
+                _arrivalEnemyAtkPoints[i] = enemy;
 
-                for(int j = 0; j < liveEnemyList.Count; ++j)
+                for(int j = 0; j < _liveEnemyList.Count; ++j)
                 {
-                    liveEnemyList[j].FullDestinationAttackPoint(attackPoints[i]);
+                    _liveEnemyList[j].FullDestinationAttackPoint(attackPoints[i]);
                 }
                 break;
             }
@@ -98,9 +109,9 @@ public class BattleManager : Singleton<BattleManager>
         int index = -1;
         float minLength = -1f;
 
-        for(int i = 0; i < liveEnemyList.Count; ++i)
+        for(int i = 0; i < _liveEnemyList.Count; ++i)
         {
-            float dist = Vector3.Distance(searcher.transform.position, liveEnemyList[i].transform.position);
+            float dist = Vector3.Distance(searcher.transform.position, _liveEnemyList[i].transform.position);
             if(range >= dist && (minLength == -1f || minLength > dist))
             {
                 minLength = dist;
@@ -108,23 +119,23 @@ public class BattleManager : Singleton<BattleManager>
             }
         }
 
-        return index >= 0 ? liveEnemyList[index].transform : null;
+        return index >= 0 ? _liveEnemyList[index].transform : null;
     }
 
     //현재 살아있는 적 리스트에서 해당 적 제거.
     public void RemoveEnemy(Enemy enemy)
     {
-        if(liveEnemyList.Contains(enemy))
+        if(_liveEnemyList.Contains(enemy))
         {
-            liveEnemyList.Remove(enemy);
+            _liveEnemyList.Remove(enemy);
         }
 
         //제거한 적이 공격 지점에 있었으면 해당 지점에서 제일 가까운 목적지가 없는 적에게 목적지 변경 요청.
-        for(int i = 0; i < arrivalEnemyAtkPoints.Length; ++i)
+        for(int i = 0; i < _arrivalEnemyAtkPoints.Length; ++i)
         {
-            if(enemy == arrivalEnemyAtkPoints[i])
+            if(enemy == _arrivalEnemyAtkPoints[i])
             {
-                arrivalEnemyAtkPoints[i] = null;
+                _arrivalEnemyAtkPoints[i] = null;
                 Enemy result = SearchNearEnemy(i);
                 if(result != null)
                 {
@@ -140,11 +151,11 @@ public class BattleManager : Singleton<BattleManager>
     {
         int index = -1;
         float minLength = -1f;
-        for(int i = 0; i < liveEnemyList.Count; ++i)
+        for(int i = 0; i < _liveEnemyList.Count; ++i)
         {
-            if(liveEnemyList[i].State == DefEnum.EnemyState.MOVE)
+            if(_liveEnemyList[i].State == DefEnum.EnemyState.MOVE)
             {
-                float dist = Vector3.Distance(liveEnemyList[i].transform.position, attackPoints[atkIndex].transform.position);
+                float dist = Vector3.Distance(_liveEnemyList[i].transform.position, attackPoints[atkIndex].transform.position);
                 if(minLength == -1f || minLength > dist)
                 {
                     minLength = dist;
@@ -153,35 +164,35 @@ public class BattleManager : Singleton<BattleManager>
             }
         }
 
-        return index >= 0 ? liveEnemyList[index] : null;
+        return index >= 0 ? _liveEnemyList[index] : null;
     }
 
     //점수 추가.
     public void AddScore(int score)
     {
-        currentScore += score;
-        ingameUI.SetScore(currentScore);
+        _currentScore += score;
+        ingameUI.SetScore(_currentScore);
     }
 
     //획득 자원 추가.
     public void AddResources(int resources)
     {
-        currentResources += resources;
-        ingameUI.SetResources(currentResources, upgradeCost);
+        _currentResources += resources;
+        ingameUI.SetResources(_currentResources, _upgradeCost);
     }
 
     //전방 범위 공격. 해당 각도와 거리 안에 있는 적 공격.
     public void AngleRangeAttack(Transform atker, float angleRange, float range, int atk)
     {
         List<Enemy> attackedList = new List<Enemy>();
-        for(int i = 0; i < liveEnemyList.Count; ++i)
+        for(int i = 0; i < _liveEnemyList.Count; ++i)
         {
-            float dist = Vector3.Distance(liveEnemyList[i].transform.position, atker.transform.position);
-            float angle = Vector3.Angle(atker.forward, liveEnemyList[i].transform.position - atker.position);
+            float dist = Vector3.Distance(_liveEnemyList[i].transform.position, atker.transform.position);
+            float angle = Vector3.Angle(atker.forward, _liveEnemyList[i].transform.position - atker.position);
             if (angle <= angleRange / 2f && dist <= range)
             {
                 //공격 대상 리스트를 따로 만들어서 우선 저장.
-                attackedList.Add(liveEnemyList[i]);
+                attackedList.Add(_liveEnemyList[i]);
             }
         }
 
@@ -196,16 +207,16 @@ public class BattleManager : Singleton<BattleManager>
     public bool FrontRangeAttack(Transform atker, float range, float length, int atk)
     {
         List<Enemy> attackedList = new List<Enemy>();
-        for(int i = 0; i < liveEnemyList.Count; ++i)
+        for(int i = 0; i < _liveEnemyList.Count; ++i)
         {
-            Vector3 toEnemyVec = liveEnemyList[i].transform.position - atker.position;
+            Vector3 toEnemyVec = _liveEnemyList[i].transform.position - atker.position;
             float hDist = Mathf.Sin(Vector3.Angle(atker.forward, toEnemyVec) * Mathf.Deg2Rad) * toEnemyVec.magnitude;
             float vDist = Mathf.Cos(Vector3.Angle(atker.forward, toEnemyVec) * Mathf.Deg2Rad) * toEnemyVec.magnitude;
             bool front = Vector3.Dot(atker.forward, toEnemyVec) / toEnemyVec.magnitude >= 0;
             if(front && hDist <= range / 2f && vDist <= length)
             {
                 //공격 대상 리스트를 따로 만들어서 우선 저장.
-                attackedList.Add(liveEnemyList[i]);
+                attackedList.Add(_liveEnemyList[i]);
             }
         }
 
@@ -224,13 +235,13 @@ public class BattleManager : Singleton<BattleManager>
     public bool CircleRangeAttack(Transform atker, float range, int atk)
     {
         List<Enemy> attackedList = new List<Enemy>();
-        for (int i = 0; i < liveEnemyList.Count; ++i)
+        for (int i = 0; i < _liveEnemyList.Count; ++i)
         {
-            float toEnemyDist = (liveEnemyList[i].transform.position - atker.position).magnitude;
+            float toEnemyDist = (_liveEnemyList[i].transform.position - atker.position).magnitude;
             if(toEnemyDist <= range / 2f)
             {
                 //공격 대상 리스트를 따로 만들어서 우선 저장.
-                attackedList.Add(liveEnemyList[i]);
+                attackedList.Add(_liveEnemyList[i]);
             }
         }
 
@@ -248,7 +259,7 @@ public class BattleManager : Singleton<BattleManager>
     //게임 시작. 무기 선택 부터 시작.
     public void GameStart()
     {
-        gameState = DefEnum.GameState.SELECT_WEAPON;
+        GameState = DefEnum.GameState.SELECT_WEAPON;
 
         if (ingameUI == null)
         {
@@ -260,15 +271,15 @@ public class BattleManager : Singleton<BattleManager>
         }
 
         planet.Init();
-        currentScore = 0;
-        currentResources = 0;
-        upgradeCost = 0;
-        upgradeLV = 1;
+        _currentScore = 0;
+        _currentResources = 0;
+        _upgradeCost = 0;
+        _upgradeLV = 1;
         SetMainWeaponID();
         GetUpgradeCost();
 
-        ingameUI.SetScore(currentScore);
-        ingameUI.SetResources(currentResources, upgradeCost);
+        ingameUI.SetScore(_currentScore);
+        ingameUI.SetResources(_currentResources, _upgradeCost);
 
         SpawnManager.Instance.Init();
         EffectManager.Instance.InitIngameEffects();
@@ -280,7 +291,7 @@ public class BattleManager : Singleton<BattleManager>
     //게임 일시 정지.
     public void Pause()
     {
-        gameState = DefEnum.GameState.PAUSE;
+        GameState = DefEnum.GameState.PAUSE;
         EffectManager.Instance.Pause();
         SoundManager.Instance.Pause();
     }
@@ -288,7 +299,7 @@ public class BattleManager : Singleton<BattleManager>
     //게임 일시 정지 해제.
     public void Play()
     {
-        gameState = DefEnum.GameState.PLAY;
+        GameState = DefEnum.GameState.PLAY;
         EffectManager.Instance.Resume();
         SoundManager.Instance.Resume();
     }
@@ -303,7 +314,7 @@ public class BattleManager : Singleton<BattleManager>
             return;
         }
 
-        gameState = DefEnum.GameState.TUTORIAL;
+        GameState = DefEnum.GameState.TUTORIAL;
         IngameSceneManager.Instance.PlayIngameScene("Tutorial_02", EndTutorial);
     }
 
@@ -319,23 +330,23 @@ public class BattleManager : Singleton<BattleManager>
     //게임 종료 처리.
     public void GameEnd(bool success)
     {
-        gameState = DefEnum.GameState.END;
+        GameState = DefEnum.GameState.END;
         EffectManager.Instance.Pause();
         IngameSceneManager.Instance.PlayIngameScene(success ? "Clear" : "Defeat", ShowResultUI);
-        isGameResult = success;
-        currentScore += planet.CurrentHP * 50;
+        _isGameResult = success;
+        _currentScore += planet.CurrentHP * 50;
     }
 
     //결과창 출력.
     void ShowResultUI()
     {
         ResultUI ui = UIManager.Instance.LoadPopupUI("ResultUI").GetComponent<ResultUI>();
-        ui.Init(isGameResult, currentScore);
+        ui.Init(_isGameResult, _currentScore);
 
-        if (DataManager.Instance.bestScore < currentScore)
+        if (DataManager.Instance.bestScore < _currentScore)
         {
-            DataManager.Instance.bestScore = currentScore;
-            PlayerPrefs.SetInt("BestScore", currentScore);
+            DataManager.Instance.bestScore = _currentScore;
+            PlayerPrefs.SetInt("BestScore", _currentScore);
         }
     }
 
@@ -349,7 +360,7 @@ public class BattleManager : Singleton<BattleManager>
         ClearEnemyList();
         planet.Clear();
 
-        gameState = DefEnum.GameState.INTRO;
+        GameState = DefEnum.GameState.INTRO;
         ingameUI.gameObject.SetActive(false);
         UIManager.Instance.LoadUI("IntroUI");
     }
@@ -363,11 +374,11 @@ public class BattleManager : Singleton<BattleManager>
     //현재 살아있는 모든 적 제거.
     public void ClearEnemyList()
     {
-        int count = liveEnemyList.Count;
+        int count = _liveEnemyList.Count;
         for (int i = count - 1; i >= 0; --i)
         {
-            GameObject enemy = liveEnemyList[i].gameObject;
-            liveEnemyList.RemoveAt(i);
+            GameObject enemy = _liveEnemyList[i].gameObject;
+            _liveEnemyList.RemoveAt(i);
             Destroy(enemy);
         }
     }
@@ -375,20 +386,20 @@ public class BattleManager : Singleton<BattleManager>
     //전략 무기 설정.
     public void SetSubWeapon(InfoWeapon info)
     {
-        planet.SetWeapon(mainWeaponID, info);
-        ResourceManager.Instance.PreLoadReaource(InfoManager.Instance.infoWeaponList[mainWeaponID].bulletPath);
+        planet.SetWeapon(_mainWeaponID, info);
+        ResourceManager.Instance.PreLoadReaource(InfoManager.Instance.infoWeaponList[_mainWeaponID].bulletPath);
         ResourceManager.Instance.PreLoadReaource(info.bulletPath);
     }
 
     //무기 업그레이드 실행. 일정 자원 이상 있어야지 실행.
     public void UpgradeWeaponLevel()
     {
-        if(currentResources >= upgradeCost)
+        if(_currentResources >= _upgradeCost)
         {
-            currentResources -= upgradeCost;
-            upgradeLV++;
+            _currentResources -= _upgradeCost;
+            _upgradeLV++;
             GetUpgradeCost();
-            ingameUI.SetResources(currentResources, upgradeCost);
+            ingameUI.SetResources(_currentResources, _upgradeCost);
             planet.UpgradeWeaponLevel();
         }
     }
@@ -399,7 +410,7 @@ public class BattleManager : Singleton<BattleManager>
     {
         //upgradeCost = upgradeCost == 0 ? System.Convert.ToInt32(InfoManager.Instance.InfoGlobalList["WeaponUpgCost"].Value)
         //    : upgradeCost + (int)(upgradeCost * ((float)System.Convert.ToDouble(InfoManager.Instance.InfoGlobalList["WeaponUpgCostIncreaseRate"].Value) / 100f));
-        upgradeCost = upgradeLV * 104 + (50 + 2 * (upgradeLV * upgradeLV + (upgradeLV - 2)));
+        _upgradeCost = _upgradeLV * 104 + (50 + 2 * (_upgradeLV * _upgradeLV + (_upgradeLV - 2)));
     }
     
     //다음 웨이브 UI 설정.
@@ -408,8 +419,8 @@ public class BattleManager : Singleton<BattleManager>
         //첫 웨이브 제외하고 다음 웨이브로 넘어갈 때 마다 추가 점수 부여.
         if(wave > 1)
         {
-            currentScore += System.Convert.ToInt32(InfoManager.Instance.infoGlobalList["WaveBonusScore"].value);
-            ingameUI.SetScore(currentScore);
+            _currentScore += System.Convert.ToInt32(InfoManager.Instance.infoGlobalList["WaveBonusScore"].value);
+            ingameUI.SetScore(_currentScore);
         }
         ingameUI.SetNextWaveUI(wave);
     }
@@ -417,7 +428,7 @@ public class BattleManager : Singleton<BattleManager>
     //마지막 웨이브인지 확인.
     public void CheckFinishWave()
     {
-        if(SpawnManager.Instance.CheckFinalWave() && liveEnemyList.Count <= 0)
+        if(SpawnManager.Instance.CheckFinalWave() && _liveEnemyList.Count <= 0)
         {
             GameEnd(true);
         }
@@ -432,8 +443,8 @@ public class BattleManager : Singleton<BattleManager>
     //더블 터치로 전략 무기 발사 켜기/끄기.
     public void SetDblTouchFire()
     {
-        isEnableDlbTouchFire = !isEnableDlbTouchFire;
-        PlayerPrefs.SetInt("OnDblTouchFire", isEnableDlbTouchFire ? 1 : 0);
+        IsEnableDlbTouchFire = !IsEnableDlbTouchFire;
+        PlayerPrefs.SetInt("OnDblTouchFire", IsEnableDlbTouchFire ? 1 : 0);
     }
 
     //기본 무기 ID 설정.
@@ -443,7 +454,7 @@ public class BattleManager : Singleton<BattleManager>
         {
             if (info.difficulty == (int)DataManager.Instance.gameDifficulty && info.isNormal == 1)
             {
-                mainWeaponID = info.ID;
+                _mainWeaponID = info.ID;
                 break;
             }
         }
