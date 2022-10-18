@@ -14,6 +14,8 @@ public class GameManager : MonoBehaviour
         SoundManager.Instance.PreLoadSound();
 
         playedTutorial = DataManager.Instance.playedTutorial;
+
+        LobbyManager.Instance.ShowLobby();
     }
 
     // Update is called once per frame

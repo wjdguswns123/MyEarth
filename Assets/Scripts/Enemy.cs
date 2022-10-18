@@ -8,7 +8,7 @@ public class Enemy : MonoBehaviour, InteractiveObject
 
     public Transform          firePosition;
 
-    GameObject                destAttackPoint;
+    AttackPoint               destAttackPoint;
     Planet                    planet;
     Move[]                    mover = new Move[3];
     DefEnum.EnemyState        state;
@@ -85,8 +85,10 @@ public class Enemy : MonoBehaviour, InteractiveObject
     //플레이어 트랜스폼 받아 초기화.
     public void Init(Planet planet, InfoEnemy info)
     {
+        BattleManager.Instance.AddEnemy(this);
+
         this.planet = planet;
-        destAttackPoint = BattleManager.Instance.AddEnemy(this);
+        destAttackPoint = BattleManager.Instance.SearchAttackPoint(this);
         level        = DataManager.Instance.enemyLevelDataList[info.ID].Level;
         HP           = info.HP + (info.HPUpg * (level - 1));
         speed        = info.speed;
@@ -107,7 +109,7 @@ public class Enemy : MonoBehaviour, InteractiveObject
     }
 
     //이동 방향 설정.
-    void SetDirection(GameObject atkPoint)
+    void SetDirection(AttackPoint atkPoint)
     {
         if(atkPoint != null)
         {
@@ -163,7 +165,7 @@ public class Enemy : MonoBehaviour, InteractiveObject
     }
 
     //목적지에 이미 다른 적이 도착했으면 새로운 목적지 탐색.
-    public void FullDestinationAttackPoint(GameObject point)
+    public void FullDestinationAttackPoint(AttackPoint point)
     {
         if(state == DefEnum.EnemyState.MOVE && destAttackPoint == point)
         {
@@ -180,7 +182,7 @@ public class Enemy : MonoBehaviour, InteractiveObject
     }
 
     //해당 지점으로 목적지 설정.
-    public void ResetDestinationAttackPoint(GameObject point)
+    public void ResetDestinationAttackPoint(AttackPoint point)
     {
         destAttackPoint = point;
         SetDirection(destAttackPoint);

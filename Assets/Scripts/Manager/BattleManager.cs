@@ -9,7 +9,7 @@ public class BattleManager : Singleton<BattleManager>
 
     public IngameUI ingameUI;
     public Planet planet;
-    public GameObject[] attackPoints;     //목적지 배열.
+    public AttackPoint[] attackPoints;     //목적지 배열.
 
     #endregion
 
@@ -18,7 +18,6 @@ public class BattleManager : Singleton<BattleManager>
     public bool IsEnableDlbTouchFire { get; private set; }
 
     private List<Enemy> _liveEnemyList;
-    private Enemy[] _arrivalEnemyAtkPoints; //목적지에 도착한 적 배열.
     
     private int _currentScore;
     private int _currentResources;
@@ -31,11 +30,9 @@ public class BattleManager : Singleton<BattleManager>
     {
         //더블 터치로 전략무기 발사 가능 로컬에 저장된 값을 불러온다.
         IsEnableDlbTouchFire = PlayerPrefs.GetInt("OnDblTouchFire") != 0;
-
-        //인트로 화면 출력.
-        GameState = DefEnum.GameState.INTRO;
-        UIManager.Instance.LoadUI("IntroUI");
     }
+
+    #region Process
 
     /// <summary>
     /// 인게임 프로세스 시작.
@@ -48,10 +45,9 @@ public class BattleManager : Singleton<BattleManager>
         }
         _liveEnemyList.Clear();
 
-        _arrivalEnemyAtkPoints = new Enemy[attackPoints.Length];
-        for (int i = 0; i < _arrivalEnemyAtkPoints.Length; ++i)
+        for(int i = 0; i < attackPoints.Length; ++i)
         {
-            _arrivalEnemyAtkPoints[i] = null;
+            attackPoints[i].Clear();
         }
 
         if (ingameUI == null)
@@ -210,35 +206,40 @@ public class BattleManager : Singleton<BattleManager>
         ClearEnemyList();
         planet.Clear();
 
-        GameState = DefEnum.GameState.INTRO;
         ingameUI.gameObject.SetActive(false);
-        UIManager.Instance.LoadUI("IntroUI");
+        LobbyManager.Instance.ShowLobby();
     }
 
-    //현재 살아있는 적 리스트에 적 추가.
-    public GameObject AddEnemy(Enemy enemy)
+    #endregion
+
+    /// <summary>
+    /// 현재 살아있는 적 리스트에 적 추가.
+    /// </summary>
+    /// <param name="enemy"></param>
+    public void AddEnemy(Enemy enemy)
     {
         _liveEnemyList.Add(enemy);
-
-        //목적지 검색해서 반환.
-        return SearchAttackPoint(enemy);
     }
 
-    //해당 적 위치에서 가장 가까운 빈 공격 지점을 검색. 없으면 null 반환.
-    public GameObject SearchAttackPoint(Enemy enemy)
+    /// <summary>
+    /// 해당 적 위치에서 가장 가까운 빈 공격 지점을 검색. 없으면 null 반환.
+    /// </summary>
+    /// <param name="enemy"></param>
+    /// <returns></returns>
+    public AttackPoint SearchAttackPoint(Enemy enemy)
     {
         int index = -1;
         float minLength = -1f;
 
-        for(int i = 0; i < attackPoints.Length; ++i)
+        for (int i = 0; i < attackPoints.Length; ++i)
         {
-            if(_arrivalEnemyAtkPoints[i] != null)
+            if (attackPoints[i].IsArriveEnemy())
             {
                 continue;
             }
 
             float dist = Vector3.Distance(enemy.transform.position, attackPoints[i].transform.position);
-            if(minLength == -1f || minLength > dist)
+            if (minLength == -1f || minLength > dist)
             {
                 minLength = dist;
                 index = i;
@@ -249,17 +250,17 @@ public class BattleManager : Singleton<BattleManager>
     }
 
     //해당 공격 지점에 적이 도달하여 해당 지점을 목표로 가지던 모든 적에게 알림.
-    public void ArrivalAttackPoint(Enemy enemy, GameObject point)
+    public void ArrivalAttackPoint(Enemy enemy, AttackPoint point)
     {
-        for(int i = 0; i < attackPoints.Length; ++i)
+        for (int i = 0; i < attackPoints.Length; ++i)
         {
-            if(attackPoints[i] == point)
+            var atkPoint = attackPoints[i];
+            if (atkPoint == point)
             {
-                _arrivalEnemyAtkPoints[i] = enemy;
-
-                for(int j = 0; j < _liveEnemyList.Count; ++j)
+                atkPoint.ArriveEnemy(enemy);
+                for (int j = 0; j < _liveEnemyList.Count; ++j)
                 {
-                    _liveEnemyList[j].FullDestinationAttackPoint(attackPoints[i]);
+                    _liveEnemyList[j].FullDestinationAttackPoint(atkPoint);
                 }
                 break;
             }
@@ -294,15 +295,16 @@ public class BattleManager : Singleton<BattleManager>
         }
 
         //제거한 적이 공격 지점에 있었으면 해당 지점에서 제일 가까운 목적지가 없는 적에게 목적지 변경 요청.
-        for(int i = 0; i < _arrivalEnemyAtkPoints.Length; ++i)
+        for (int i = 0; i < attackPoints.Length; ++i)
         {
-            if(enemy == _arrivalEnemyAtkPoints[i])
+            var atkPoint = attackPoints[i];
+            if (atkPoint.IsArriveThisEnemy(enemy))
             {
-                _arrivalEnemyAtkPoints[i] = null;
+                atkPoint.Clear();
                 Enemy result = SearchNearEnemy(i);
-                if(result != null)
+                if (result != null)
                 {
-                    result.ResetDestinationAttackPoint(attackPoints[i]);
+                    result.ResetDestinationAttackPoint(atkPoint);
                 }
                 break;
             }

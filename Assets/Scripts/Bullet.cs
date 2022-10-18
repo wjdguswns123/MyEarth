@@ -65,7 +65,7 @@ public class Bullet : MonoBehaviour, InteractiveObject
                 attackRateTimer += Time.deltaTime;
             }
         }
-        else if (BattleManager.Instance.GameState == Def.DefEnum.GameState.END || BattleManager.Instance.GameState == Def.DefEnum.GameState.INTRO)
+        else if (BattleManager.Instance.GameState == Def.DefEnum.GameState.END)
         {
             //게임 종료되면 탄환 삭제.
             //Destroy(gameObject);
