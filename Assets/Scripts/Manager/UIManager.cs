@@ -4,40 +4,53 @@ using System.Collections.Generic;
 
 public class UIManager : Singleton<UIManager>
 {
+    private const string UI_PATH = "UI/";
+
+    #region Inspector
+
     public Transform  popupBGImg;    //팝업 UI 뒷 가림막.
     public Camera     UICamera;
 
-    Stack<GameObject> openPopupUIStack = new Stack<GameObject>();
+    #endregion
 
-    //해당 이름의 UI 불러오기.
+    private Stack<GameObject> _openPopupUIStack;
+
     public GameObject LoadUI(string uiName)
     {
-        //return ResourceManager.Instance.LoadResource(string.Format("UI/{0}", uiName), transform);
-        GameObject ui = Instantiate(Resources.Load<GameObject>(string.Format("UI/{0}", uiName)));
-        ui.transform.parent = transform;
-        ui.transform.localPosition = Vector3.zero;
-        ui.transform.localScale = Vector3.one;
-        return ui;
+        return LoadUI(uiName, this.transform);
     }
 
-    //해당 이름의 UI 불러와서 parent 자식으로 설정.
+    /// <summary>
+    /// 해당 이름의 UI 불러오기.
+    /// </summary>
+    /// <param name="uiName"></param>
+    /// <param name="parent"></param>
+    /// <returns></returns>
     public GameObject LoadUI(string uiName, Transform parent)
     {
-        //GameObject ui = ResourceManager.Instance.LoadResource(string.Format("UI/{0}", uiName), transform);
-        GameObject ui = Instantiate(Resources.Load<GameObject>(string.Format("UI/{0}", uiName)));
+        GameObject ui = Instantiate(Resources.Load<GameObject>(UI_PATH + uiName));
         ui.transform.parent = parent;
         ui.transform.localPosition = Vector3.zero;
         ui.transform.localScale = Vector3.one;
         return ui;
     }
 
-    //UI 불러오기.
+    /// <summary>
+    /// 팝업 UI 불러오기.
+    /// </summary>
+    /// <param name="uiName"></param>
+    /// <returns></returns>
     public GameObject LoadPopupUI(string uiName)
     {
-        GameObject ui = LoadUI(uiName);
-        if(openPopupUIStack.Count > 0)
+        if(_openPopupUIStack == null)
         {
-            UIPanel[] panels = openPopupUIStack.Peek().GetComponentsInChildren<UIPanel>();
+            _openPopupUIStack = new Stack<GameObject>();
+        }
+
+        GameObject ui = LoadUI(uiName);
+        if(_openPopupUIStack.Count > 0)
+        {
+            UIPanel[] panels = _openPopupUIStack.Peek().GetComponentsInChildren<UIPanel>();
             int maxDepth = 0;
             for(int i = 0; i < panels.Length; ++i)
             {
@@ -48,7 +61,7 @@ public class UIManager : Singleton<UIManager>
             }
             ui.GetComponent<UIPanel>().depth = maxDepth + 1;
         }
-        openPopupUIStack.Push(ui);
+        _openPopupUIStack.Push(ui);
         popupBGImg.gameObject.SetActive(false);
         popupBGImg.parent = ui.transform;
         popupBGImg.gameObject.SetActive(true);
@@ -56,13 +69,15 @@ public class UIManager : Singleton<UIManager>
         return ui;
     }
 
-    //UI 닫기.
+    /// <summary>
+    /// 팝업 UI 닫기.
+    /// </summary>
     public void ClosePopupUI()
     {
-        GameObject ui = openPopupUIStack.Pop();
-        if(openPopupUIStack.Count > 0)
+        GameObject ui = _openPopupUIStack.Pop();
+        if(_openPopupUIStack.Count > 0)
         {
-            popupBGImg.parent = openPopupUIStack.Peek().transform;
+            popupBGImg.parent = _openPopupUIStack.Peek().transform;
         }
         else
         {
