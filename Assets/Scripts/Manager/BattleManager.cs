@@ -15,8 +15,6 @@ public class BattleManager : Singleton<BattleManager>
 
     public DefEnum.GameState GameState { get; private set; }
 
-    public bool IsEnableDlbTouchFire { get; private set; }
-
     private List<Enemy> _liveEnemyList;
     
     private int _currentScore;
@@ -25,12 +23,6 @@ public class BattleManager : Singleton<BattleManager>
     private int _upgradeLV;
     private int _mainWeaponID;
     private bool _isGameResult;
-
-    public void Init()
-    {
-        //더블 터치로 전략무기 발사 가능 로컬에 저장된 값을 불러온다.
-        IsEnableDlbTouchFire = PlayerPrefs.GetInt("OnDblTouchFire") != 0;
-    }
 
     #region Process
 
@@ -73,6 +65,7 @@ public class BattleManager : Singleton<BattleManager>
 
         SpawnManager.Instance.Init();
         EffectManager.Instance.InitIngameEffects();
+        ResourceManager.Instance.PreLoadReaource(InfoManager.Instance.infoWeaponList[_mainWeaponID].bulletPath);    // 기본 무기 총알 풀 생성.
 
         SelectWeapon();
     }
@@ -203,7 +196,7 @@ public class BattleManager : Singleton<BattleManager>
         EffectManager.Instance.ClearEffectList();
         SoundManager.Instance.AllSFXStop();
         ResourceManager.Instance.ClearObjectPools();
-        ClearEnemyList();
+        _liveEnemyList.Clear();
         planet.Clear();
 
         ingameUI.gameObject.SetActive(false);
@@ -374,27 +367,19 @@ public class BattleManager : Singleton<BattleManager>
         planet.ForcedEnd();
     }
 
-    //현재 살아있는 모든 적 제거.
-    public void ClearEnemyList()
-    {
-        int count = _liveEnemyList.Count;
-        for (int i = count - 1; i >= 0; --i)
-        {
-            GameObject enemy = _liveEnemyList[i].gameObject;
-            _liveEnemyList.RemoveAt(i);
-            Destroy(enemy);
-        }
-    }
-
-    //전략 무기 설정.
+    /// <summary>
+    /// 전략 무기 설정.
+    /// </summary>
+    /// <param name="info"></param>
     public void SetSubWeapon(InfoWeapon info)
     {
         planet.SetWeapon(_mainWeaponID, info);
-        ResourceManager.Instance.PreLoadReaource(InfoManager.Instance.infoWeaponList[_mainWeaponID].bulletPath);
         ResourceManager.Instance.PreLoadReaource(info.bulletPath);
     }
 
-    //무기 업그레이드 실행. 일정 자원 이상 있어야지 실행.
+    /// <summary>
+    /// 무기 업그레이드 실행. 일정 자원 이상 있어야지 실행.
+    /// </summary>
     public void UpgradeWeaponLevel()
     {
         if(_currentResources >= _upgradeCost)
@@ -407,16 +392,19 @@ public class BattleManager : Singleton<BattleManager>
         }
     }
 
-    //무기 강화 가격 계산 후 반환.
-    //레벨 * 104 + (50 + 2 * (레벨 제곱 + (레벨 - 2)))
-    void GetUpgradeCost()
+    /// <summary>
+    /// 무기 강화 가격 계산 후 반환.
+    /// 레벨 * 104 + (50 + 2 * (레벨 제곱 + (레벨 - 2)))
+    /// </summary>
+    private void GetUpgradeCost()
     {
-        //upgradeCost = upgradeCost == 0 ? System.Convert.ToInt32(InfoManager.Instance.InfoGlobalList["WeaponUpgCost"].Value)
-        //    : upgradeCost + (int)(upgradeCost * ((float)System.Convert.ToDouble(InfoManager.Instance.InfoGlobalList["WeaponUpgCostIncreaseRate"].Value) / 100f));
         _upgradeCost = _upgradeLV * 104 + (50 + 2 * (_upgradeLV * _upgradeLV + (_upgradeLV - 2)));
     }
-    
-    //다음 웨이브 UI 설정.
+
+    /// <summary>
+    /// 다음 웨이브 UI 설정.
+    /// </summary>
+    /// <param name="wave"></param>
     public void NextWave(int wave)
     {
         //첫 웨이브 제외하고 다음 웨이브로 넘어갈 때 마다 추가 점수 부여.
@@ -428,7 +416,9 @@ public class BattleManager : Singleton<BattleManager>
         ingameUI.SetNextWaveUI(wave);
     }
 
-    //마지막 웨이브인지 확인.
+    /// <summary>
+    /// 마지막 웨이브인지 확인.
+    /// </summary>
     public void CheckFinishWave()
     {
         if(SpawnManager.Instance.CheckFinalWave() && _liveEnemyList.Count <= 0)
@@ -437,20 +427,17 @@ public class BattleManager : Singleton<BattleManager>
         }
     }
 
-    //전략 무기 발사 처리.
+    /// <summary>
+    /// 전략 무기 발사 처리.
+    /// </summary>
     public void FireSubweapon()
     {
         planet.FireSubweapon();
     }
 
-    //더블 터치로 전략 무기 발사 켜기/끄기.
-    public void SetDblTouchFire()
-    {
-        IsEnableDlbTouchFire = !IsEnableDlbTouchFire;
-        PlayerPrefs.SetInt("OnDblTouchFire", IsEnableDlbTouchFire ? 1 : 0);
-    }
-
-    //기본 무기 ID 설정.
+    /// <summary>
+    /// 기본 무기 ID 설정.
+    /// </summary>
     void SetMainWeaponID()
     {
         foreach (InfoWeapon info in InfoManager.Instance.infoWeaponList.Values)
@@ -462,6 +449,8 @@ public class BattleManager : Singleton<BattleManager>
             }
         }
     }
+
+    #region Attack
 
     //전방 범위 공격. 해당 각도와 거리 안에 있는 적 공격.
     public void AngleRangeAttack(Transform atker, float angleRange, float range, int atk)
@@ -537,6 +526,8 @@ public class BattleManager : Singleton<BattleManager>
 
         return result;
     }
+
+    #endregion
 
     ////공격 지점 기즈모 표시.
     //private void OnDrawGizmos()

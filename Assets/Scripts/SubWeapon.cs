@@ -143,7 +143,7 @@ public class SubWeapon : MonoBehaviour
     //더블 터치로 인한 탄환 발사.
     void FireByDblTouch()
     {
-        if(BattleManager.Instance.IsEnableDlbTouchFire && Input.GetMouseButtonDown(0))
+        if(GameManager.Instance.IsEnableDlbTouchFire && Input.GetMouseButtonDown(0))
         {
             if(isDoubleTouchEnable)
             {

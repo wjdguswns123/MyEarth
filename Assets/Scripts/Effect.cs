@@ -26,6 +26,12 @@ public class Effect : MonoBehaviour
     {
         _time = 0f;
         _isPause = false;
+
+        for(int i = 0; i < _tweeners.Length; ++i)
+        {
+            _tweeners[i].enabled = true;
+            _tweeners[i].ResetToBeginning();
+        }
     }
 
     private void Update()

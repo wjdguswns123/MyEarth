@@ -37,7 +37,7 @@ public class OptionUI : MonoBehaviour
     //더블 터치로 전략 무기 발사 활성화 버튼 클릭.
     public void OnDblTouchFireBtnClick()
     {
-        BattleManager.Instance.SetDblTouchFire();
+        GameManager.Instance.SetDblTouchFire();
         SetDblTouchFireBtnStatus();
     }
 
@@ -56,6 +56,6 @@ public class OptionUI : MonoBehaviour
     //더블 터치로 전략 무기 발사 활성화 상태에 따라 버튼 레이블 설정.
     void SetDblTouchFireBtnStatus()
     {
-        doubleTouchFireButton.transform.Find("StatusLabel").GetComponent<UILabel>().text = BattleManager.Instance.IsEnableDlbTouchFire ? "ON" : "OFF";
+        doubleTouchFireButton.transform.Find("StatusLabel").GetComponent<UILabel>().text = GameManager.Instance.IsEnableDlbTouchFire ? "ON" : "OFF";
     }
 }
