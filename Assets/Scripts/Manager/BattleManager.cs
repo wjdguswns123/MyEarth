@@ -13,6 +13,8 @@ public class BattleManager : Singleton<BattleManager>
 
     #endregion
 
+    public DefEnum.Difficulty GameDifficulty { get; private set; }
+
     public DefEnum.GameState GameState { get; private set; }
 
     private List<Enemy> _liveEnemyList;
@@ -29,8 +31,10 @@ public class BattleManager : Singleton<BattleManager>
     /// <summary>
     /// 인게임 프로세스 시작.
     /// </summary>
-    public void StartProcess()
+    public void StartProcess(DefEnum.Difficulty difficulty)
     {
+        GameDifficulty = difficulty;
+
         if (_liveEnemyList == null)
         {
             _liveEnemyList = new List<Enemy>();
@@ -442,7 +446,7 @@ public class BattleManager : Singleton<BattleManager>
     {
         foreach (InfoWeapon info in InfoManager.Instance.infoWeaponList.Values)
         {
-            if (info.difficulty == (int)DataManager.Instance.gameDifficulty && info.isNormal == 1)
+            if (info.difficulty == (int)GameDifficulty && info.isNormal == 1)
             {
                 _mainWeaponID = info.ID;
                 break;

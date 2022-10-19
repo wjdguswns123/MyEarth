@@ -31,13 +31,11 @@ public class DataManager : Singleton<DataManager>
 
     public int                bestScore;        //최고 점수.
     public bool               playedTutorial;   //튜토리얼 플레이 여부.
-    public DefEnum.Difficulty gameDifficulty;   //현재 선택된 게임 난이도.
 
     public void Init()
     {
         bestScore = PlayerPrefs.GetInt("BestScore");
         playedTutorial = PlayerPrefs.GetInt("PlayedTutorial") > 0;
-        gameDifficulty = DefEnum.Difficulty.EASY;
     }
 
     //적 레벨 정보 데이터 리스트에 추가.

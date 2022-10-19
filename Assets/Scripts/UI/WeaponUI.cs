@@ -19,7 +19,7 @@ public class WeaponUI : MonoBehaviour
     {
         foreach(InfoWeapon info in InfoManager.Instance.infoWeaponList.Values)
         {
-            if(info.difficulty == (int)DataManager.Instance.gameDifficulty && info.isNormal == 0)
+            if(info.difficulty == (int)BattleManager.Instance.GameDifficulty && info.isNormal == 0)
             {
                 GameObject item = UIManager.Instance.LoadUI("WeaponListItemUI", listGrid.transform);
                 item.GetComponent<WeaponLIstItemUI>().Init(info, CloseUI);

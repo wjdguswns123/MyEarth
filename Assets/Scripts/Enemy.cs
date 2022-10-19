@@ -83,11 +83,11 @@ public class Enemy : MonoBehaviour, InteractiveObject
     }
 
     //플레이어 트랜스폼 받아 초기화.
-    public void Init(Planet planet, InfoEnemy info)
+    public void Init(InfoEnemy info)
     {
         BattleManager.Instance.AddEnemy(this);
 
-        this.planet = planet;
+        this.planet = BattleManager.Instance.planet;
         destAttackPoint = BattleManager.Instance.SearchAttackPoint(this);
         level        = DataManager.Instance.enemyLevelDataList[info.ID].Level;
         HP           = info.HP + (info.HPUpg * (level - 1));
