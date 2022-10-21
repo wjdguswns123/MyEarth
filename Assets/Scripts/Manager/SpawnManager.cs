@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 public class SpawnManager : Singleton<SpawnManager>
 {
+    private const int SPECIAL_ENEMY_ADD_RATE = 100;
+
     #region Inspector
 
     public Transform[] lv1SpawnPositions;
@@ -17,11 +19,9 @@ public class SpawnManager : Singleton<SpawnManager>
     private int _waveCountIndex;
 
     private bool _updateWave;
-    private bool _isSpawnedSpecialEnemy;
-
-    private List<int> _difficultyEnemyIndexList;
-
-    private Dictionary<int, int> _enemySpawnRate;
+        
+    private List<InfoEnemySpawn> _enemySpawnRate;
+    private List<InfoEnemySpawn> _specialEnemySpawnRate;
 
     private List<InfoWave> _waveInfos;
     private InfoWave _currentWaveInfo;
@@ -37,7 +37,6 @@ public class SpawnManager : Singleton<SpawnManager>
         _waveInfos = new List<InfoWave>(InfoManager.Instance.infoWaveList.Values);
 
         InitWaveIndex();
-        InitEnemyList();
 
         BattleManager.Instance.NextWave(_waveCountIndex);
 
@@ -62,7 +61,6 @@ public class SpawnManager : Singleton<SpawnManager>
 
                 SetEnemySpawnRate(info.enemySpawnGroup);
                 _updateWave = true;
-                _isSpawnedSpecialEnemy = false;
                 break;
             }
         }
@@ -78,41 +76,34 @@ public class SpawnManager : Singleton<SpawnManager>
     {
         if (_enemySpawnRate == null)
         {
-            _enemySpawnRate = new Dictionary<int, int>();
+            _enemySpawnRate = new List<InfoEnemySpawn>();
         }
         else
         {
             _enemySpawnRate.Clear();
         }
 
+        if (_specialEnemySpawnRate == null)
+        {
+            _specialEnemySpawnRate = new List<InfoEnemySpawn>();
+        }
+        else
+        {
+            _specialEnemySpawnRate.Clear();
+        }
+
         foreach (InfoEnemySpawn info in InfoManager.Instance.infoEnemySpawnList.Values)
         {
             if (info.group == group)
             {
-                _enemySpawnRate.Add(info.enemyID, info.spawnRate);
-            }
-        }
-    }
-
-    /// <summary>
-    /// 선택한 난이도에 해당하는 적 정보 리스트 생성.
-    /// </summary>
-    private void InitEnemyList()
-    {
-        if (_difficultyEnemyIndexList == null)
-        {
-            _difficultyEnemyIndexList = new List<int>();
-        }
-        else
-        {
-            _difficultyEnemyIndexList.Clear();
-        }
-
-        foreach (KeyValuePair<int, InfoEnemy> info in InfoManager.Instance.infoEnemyList)
-        {
-            if (info.Value.difficulty == (int)BattleManager.Instance.GameDifficulty)
-            {
-                _difficultyEnemyIndexList.Add(info.Key);
+                if(info.spawnRate > SPECIAL_ENEMY_ADD_RATE)
+                {
+                    _specialEnemySpawnRate.Add(info);
+                }
+                else
+                {
+                    _enemySpawnRate.Add(info);
+                }
             }
         }
     }
@@ -187,7 +178,7 @@ public class SpawnManager : Singleton<SpawnManager>
                     // 모든 스폰 지점이 다 찼으면 더 생성하지 않음.
                     break;
                 }
-                InfoEnemy enemyInfo = RandEnemy();
+                InfoEnemy enemyInfo = GetEnemyInfo();
                 Enemy enemyObj = ResourceManager.Instance.LoadResource(enemyInfo.prefabPath, spawnPos.position, spawnPos.rotation).GetComponent<Enemy>();
                 enemyObj.Init(enemyInfo);
                 //생성 후 해당 생성 위치 비활성화 처리.
@@ -273,44 +264,85 @@ public class SpawnManager : Singleton<SpawnManager>
         return emptys[randIndex];
     }
 
-    //적 정보 랜덤으로 가져오기.
-    private InfoEnemy RandEnemy()
+    /// <summary>
+    /// 적 정보 랜덤으로 가져오기.
+    /// </summary>
+    /// <returns></returns>
+    private InfoEnemy GetEnemyInfo()
     {
-        foreach (KeyValuePair<int, int> spawn in _enemySpawnRate)
+        int rand = Random.Range(0, 100);
+        int sum = 0;
+        // 스페셜 적.
+        if(_specialEnemySpawnRate.Count == _remainSpawnCount)
         {
-            if (spawn.Value > 100)
+            // 이번 웨이브의 남은 적 수가 아직 나오지 않은 스페셜 적 수 만큼 남아있으면, 바로 스페셜 적 정보 반환.
+            var info = _specialEnemySpawnRate[0];
+            _specialEnemySpawnRate.Remove(info);
+            SetEnemyLevel(info.enemyID);
+            return InfoManager.Instance.infoEnemyList[info.enemyID];
+        }
+        else
+        {
+            for (int i = 0; i < _specialEnemySpawnRate.Count; ++i)
             {
-                int sp_rand = Random.Range(1, 101);
-                if ((_remainSpawnCount == 1 && !_isSpawnedSpecialEnemy) || (sp_rand <= spawn.Value - 100))
+                var info = _specialEnemySpawnRate[i];
+                if (rand < info.spawnRate - SPECIAL_ENEMY_ADD_RATE)
                 {
-                    _isSpawnedSpecialEnemy = true;
-                    return GetEnemyInfo(_difficultyEnemyIndexList[spawn.Key - 1]);
+                    _specialEnemySpawnRate.Remove(info);
+                    SetEnemyLevel(info.enemyID);
+                    return InfoManager.Instance.infoEnemyList[info.enemyID];
                 }
             }
         }
 
-        int rand = Random.Range(1, 101);
-        int sum = 0;
-        foreach (KeyValuePair<int, int> spawn in _enemySpawnRate)
+        // 일반 적.
+        for(int j = 0; j < _enemySpawnRate.Count; ++j)
         {
-            sum += spawn.Value;
+            var info = _enemySpawnRate[j];
+            sum += info.spawnRate;
             if (rand <= sum)
             {
-                return GetEnemyInfo(_difficultyEnemyIndexList[spawn.Key - 1]);
+                SetEnemyLevel(info.enemyID);
+                return InfoManager.Instance.infoEnemyList[info.enemyID];
             }
         }
 
         return InfoManager.Instance.infoEnemyList[1];
     }
 
-    //다음 웨이브 정보 받아오기.
-    void SetNextWave()
-    {
-        bool next = false;
-        for (int i = 0; i < _waveInfos.Count; i++)
+    /// <summary>
+    /// 적 레벨 설정.
+    /// </summary>
+    /// <param name="emenyId"></param>
+    private void SetEnemyLevel(int emenyId)
+    {   
+        //해당 ID의 적 레벨 정보 설정. 해당 정보가 없으면 새로 적 레벨 정보 추가, 있으면 레벨 증가.
+        if (!DataManager.Instance.enemyLevelDataList.ContainsKey(emenyId))
         {
-            var info = _waveInfos[i];
-            if (next && (int)BattleManager.Instance.GameDifficulty == info.difficulty)
+            DataManager.Instance.AddEnemyLevelData(emenyId, _currentWaveInfo.ID);
+        }
+        else
+        {
+            var enemyLvData = DataManager.Instance.enemyLevelDataList[emenyId];
+            if(enemyLvData.PrevWave < _currentWaveInfo.ID)
+            {
+                enemyLvData.PrevWave = _currentWaveInfo.ID;
+                enemyLvData.Level++;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 다음 웨이브 정보 설정.
+    /// </summary>
+    private void SetNextWave()
+    {   
+        int curIndex = _waveInfos.FindIndex(i => i.ID == _currentWaveInfo.ID);
+        _currentWaveInfo = null;
+        if (curIndex + 1 < _waveInfos.Count)
+        {
+            var info = _waveInfos[curIndex + 1];
+            if(info.difficulty == (int)BattleManager.Instance.GameDifficulty)
             {
                 _currentWaveInfo = info;
                 _remainSpawnCount = info.spawnCount;
@@ -318,31 +350,21 @@ public class SpawnManager : Singleton<SpawnManager>
 
                 SetEnemySpawnRate(info.enemySpawnGroup);
                 _updateWave = true;
-                _isSpawnedSpecialEnemy = false;
-                break;
             }
-            else if (_currentWaveInfo.ID == info.ID && (int)BattleManager.Instance.GameDifficulty == info.difficulty)
-            {
-                next = true;
-            }
-        }
-
-        //더이상 받아올 웨이브 정보가 없으면 남은 스폰 수 -1로 처리.
-        if (_remainSpawnCount <= 0)
-        {
-            _remainSpawnCount = -1;
         }
     }
 
-    //모든 생성 위치 활성화.
-    void ResetAllSpawnPos()
+    /// <summary>
+    /// 모든 생성 위치 활성화.
+    /// </summary>
+    private void ResetAllSpawnPos()
     {
         ResetSpawnPos(lv1SpawnPositions);
         ResetSpawnPos(lv2SpawnPositions);
         ResetSpawnPos(lv3SpawnPositions);
     }
 
-    void ResetSpawnPos(Transform[] spawnPos)
+    private void ResetSpawnPos(Transform[] spawnPos)
     {
         for(int i = 1; i < spawnPos.Length; ++i)
         {
@@ -350,24 +372,12 @@ public class SpawnManager : Singleton<SpawnManager>
         }
     }
 
-    InfoEnemy GetEnemyInfo(int key)
-    {
-        //해당 ID의 적 레벨 정보 설정. 해당 정보가 없으면 새로 적 레벨 정보 추가, 있으면 레벨 증가.
-        if (!DataManager.Instance.enemyLevelDataList.ContainsKey(key))
-        {
-            DataManager.Instance.AddEnemyLevelData(key, _currentWaveInfo.ID);
-        }
-        else if (DataManager.Instance.enemyLevelDataList[key].PrevWave < _currentWaveInfo.ID)
-        {
-            DataManager.Instance.enemyLevelDataList[key].PrevWave = _currentWaveInfo.ID;
-            DataManager.Instance.enemyLevelDataList[key].Level++;
-        }
-        return InfoManager.Instance.infoEnemyList[key];
-    }
-
-    //마지막 웨이브인지 확인.
+    /// <summary>
+    /// 마지막 웨이브인지 확인.
+    /// </summary>
+    /// <returns></returns>
     public bool CheckFinalWave()
     {
-        return _remainSpawnCount == -1;
+        return _currentWaveInfo == null;
     }
 }
