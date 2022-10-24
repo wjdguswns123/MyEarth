@@ -13,4 +13,15 @@
         public enum MoveType { LINEAR = 1, GUIDED }                                       //적, 탄환 이동 유형.
         public enum AttackType { SINGLE = 1, ANGLE_RANGE, FRONT_RANGE, RANGE_EXPLOSION }  //탄환 공격 유형.
     }
+
+    public static class ResourcePath
+    {
+        /// <summary>
+        /// 리소스 경로.
+        /// </summary>
+        public const string BULLET_PATH = "Bullets/";
+        public const string WEAPON_PATH = "Weapons/";
+        public const string ENEMY_PATH = "Enemy/";
+        public const string EFFECT_PATH = "Effects/";
+    }
 }

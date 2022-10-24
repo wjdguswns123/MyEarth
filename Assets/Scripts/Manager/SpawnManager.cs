@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Def;
 
 public class SpawnManager : Singleton<SpawnManager>
 {
@@ -42,7 +43,7 @@ public class SpawnManager : Singleton<SpawnManager>
 
         foreach (InfoEnemy info in InfoManager.Instance.infoEnemyList.Values)
         {
-            ResourceManager.Instance.CreateObjectPool(info.prefabPath, 20, 5);
+            ResourceManager.Instance.CreateObjectPool(ResourcePath.ENEMY_PATH, info.prefabPath, 20, 5);
         }
     }
 
@@ -179,7 +180,7 @@ public class SpawnManager : Singleton<SpawnManager>
                     break;
                 }
                 InfoEnemy enemyInfo = GetEnemyInfo();
-                Enemy enemyObj = ResourceManager.Instance.LoadResource(enemyInfo.prefabPath, spawnPos.position, spawnPos.rotation).GetComponent<Enemy>();
+                Enemy enemyObj = ResourceManager.Instance.LoadResource(ResourcePath.ENEMY_PATH, enemyInfo.prefabPath, spawnPos.position, spawnPos.rotation).GetComponent<Enemy>();
                 enemyObj.Init(enemyInfo);
                 //생성 후 해당 생성 위치 비활성화 처리.
                 spawnPos.gameObject.SetActive(false);

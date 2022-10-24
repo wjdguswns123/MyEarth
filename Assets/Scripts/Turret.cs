@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Def;
 
 public class Turret : MonoBehaviour
 {
@@ -27,11 +28,11 @@ public class Turret : MonoBehaviour
         mainWeaponInfo = mainInfo;
         weaponLevel = 0;
 
-        ResourceManager.Instance.CreateObjectPool(mainWeaponInfo.bulletPath);
+        ResourceManager.Instance.CreateObjectPool(ResourcePath.BULLET_PATH, mainWeaponInfo.bulletPath);
 
         if (!subInfo.weaponPath.Equals(""))
         {
-            subWeapon = ResourceManager.Instance.LoadResource(subInfo.weaponPath, subWeaponPosition).GetComponent<SubWeapon>();
+            subWeapon = ResourceManager.Instance.LoadResource(ResourcePath.WEAPON_PATH, subInfo.weaponPath, subWeaponPosition).GetComponent<SubWeapon>();
             subWeapon.Init(subInfo);
         }
     }
@@ -48,7 +49,7 @@ public class Turret : MonoBehaviour
     {
         if(mainFireTimer >= mainWeaponInfo.loadTime)
         {
-            Bullet bul = ResourceManager.Instance.LoadResource(mainWeaponInfo.bulletPath, firePosition.transform.position, firePosition.transform.rotation).GetComponent<Bullet>();
+            Bullet bul = ResourceManager.Instance.LoadResource(ResourcePath.WEAPON_PATH, mainWeaponInfo.bulletPath, firePosition.transform.position, firePosition.transform.rotation).GetComponent<Bullet>();
             bul.Init(mainWeaponInfo, weaponLevel);
             SoundManager.Instance.PlaySound(mainWeaponInfo.fireSFXPath);
             mainFireTimer = 0f;

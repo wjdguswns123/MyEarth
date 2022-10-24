@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Def;
 
 public class SubWeapon : MonoBehaviour
 {
@@ -65,8 +66,8 @@ public class SubWeapon : MonoBehaviour
                     //발사 속도가 0이면 발사 지점 아래에 생성, 0보다 크면 부모 객체 없이 생성.
                     Transform firePos = firePosition[(firePosition.Length > i ? i : i % firePosition.Length)];
                     Bullet bul = subWeaponInfo.speed > 0 ?
-                        ResourceManager.Instance.LoadResource(subWeaponInfo.bulletPath, firePos.position, firePos.rotation).GetComponent<Bullet>() :
-                        ResourceManager.Instance.LoadResource(subWeaponInfo.bulletPath, firePos).GetComponent<Bullet>();
+                        ResourceManager.Instance.LoadResource(ResourcePath.WEAPON_PATH, subWeaponInfo.bulletPath, firePos.position, firePos.rotation).GetComponent<Bullet>() :
+                        ResourceManager.Instance.LoadResource(ResourcePath.WEAPON_PATH, subWeaponInfo.bulletPath, firePos).GetComponent<Bullet>();
                     bul.Init(subWeaponInfo, weaponLevel);
                     if (isLunching)
                     {

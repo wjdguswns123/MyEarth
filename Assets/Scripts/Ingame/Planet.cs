@@ -105,12 +105,11 @@ public class Planet : MonoBehaviour
     {
         if(_turret != null)
         {
-            //Destroy(_turret.gameObject);
-            _turret.gameObject.SetActive(false);    // 릴리즈 생각좀...
+            ResourceManager.Instance.ReleaseResource(_turret.gameObject);
             _turret = null;
         }
         InfoWeapon mainInfo = InfoManager.Instance.infoWeaponList[mainWeaponId];
-        _turret = ResourceManager.Instance.LoadResource(mainInfo.weaponPath, turretPos).GetComponent<Turret>();
+        _turret = ResourceManager.Instance.LoadResource(ResourcePath.WEAPON_PATH, mainInfo.weaponPath, turretPos).GetComponent<Turret>();
         _turret.Init(mainInfo, subInfo);
     }
 
@@ -147,8 +146,7 @@ public class Planet : MonoBehaviour
     {
         if(_turret != null)
         {
-            //Destroy(_turret.gameObject);
-            _turret.gameObject.SetActive(false);    // 릴리즈 생각좀...
+            ResourceManager.Instance.ReleaseResource(_turret.gameObject);
             _turret = null;
         }
 

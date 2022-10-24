@@ -93,6 +93,7 @@ public class ObjectPool
     /// <param name="go"></param>
     public void ReturnObject(GameObject go)
     {
+        go.transform.SetParent(_objectsParent);
         go.transform.localPosition = Vector3.zero;
         go.transform.localRotation = Quaternion.identity;
         go.SetActive(false);

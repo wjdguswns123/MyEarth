@@ -69,7 +69,7 @@ public class BattleManager : Singleton<BattleManager>
 
         SpawnManager.Instance.Init();
         EffectManager.Instance.InitIngameEffects();
-        ResourceManager.Instance.PreLoadReaource(InfoManager.Instance.infoWeaponList[_mainWeaponID].bulletPath);    // 기본 무기 총알 풀 생성.
+        ResourceManager.Instance.PreLoadReaource(ResourcePath.BULLET_PATH, InfoManager.Instance.infoWeaponList[_mainWeaponID].bulletPath);    // 기본 무기 총알 풀 생성.
 
         SelectWeapon();
     }
@@ -378,7 +378,7 @@ public class BattleManager : Singleton<BattleManager>
     public void SetSubWeapon(InfoWeapon info)
     {
         planet.SetWeapon(_mainWeaponID, info);
-        ResourceManager.Instance.PreLoadReaource(info.bulletPath);
+        ResourceManager.Instance.PreLoadReaource(ResourcePath.BULLET_PATH, info.bulletPath);
     }
 
     /// <summary>

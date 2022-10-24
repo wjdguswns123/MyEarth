@@ -3,11 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using Def;
 
 public class EffectManager : Singleton<EffectManager>
 {
-    private const string EFFECT_PATH = "Effects/";
-
     private List<Effect> _effectList = new List<Effect>();
 
     /// <summary>
@@ -15,7 +14,7 @@ public class EffectManager : Singleton<EffectManager>
     /// </summary>
     public void InitIngameEffects()
     {
-        ResourceManager.Instance.CreateObjectsPool(EFFECT_PATH, 5);
+        ResourceManager.Instance.CreateObjectsPool(ResourcePath.EFFECT_PATH, 5);
     }
 
     /// <summary>
@@ -27,8 +26,7 @@ public class EffectManager : Singleton<EffectManager>
     /// <returns></returns>
     public GameObject LoadEffect(string name, Vector3 pos, Quaternion rot)
     {
-        string path = EFFECT_PATH + name;
-        GameObject effectObj = ResourceManager.Instance.LoadResource(path, pos, rot);
+        GameObject effectObj = ResourceManager.Instance.LoadResource(ResourcePath.EFFECT_PATH, name, pos, rot);
         var effect = effectObj.GetComponent<Effect>();
         _effectList.Add(effect);
         return effectObj;
@@ -42,8 +40,7 @@ public class EffectManager : Singleton<EffectManager>
     /// <returns></returns>
     public GameObject LoadEffect(string name, Transform parent)
     {
-        string path = EFFECT_PATH + name;
-        GameObject effectObj = ResourceManager.Instance.LoadResource(path, parent);
+        GameObject effectObj = ResourceManager.Instance.LoadResource(ResourcePath.EFFECT_PATH, name, parent);
         var effect = effectObj.GetComponent<Effect>();
         _effectList.Add(effect);
         return effectObj;
