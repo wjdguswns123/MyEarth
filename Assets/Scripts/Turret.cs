@@ -4,65 +4,79 @@ using Def;
 
 public class Turret : MonoBehaviour
 {
+    #region Inspector
+
     public GameObject firePosition;
     public Transform  subWeaponPosition;
 
-    InfoWeapon        mainWeaponInfo;
+    #endregion
 
-    SubWeapon         subWeapon;
+    private InfoWeapon _mainWeaponInfo;
 
-    float             mainFireTimer = 0f;
-    int               weaponLevel;
+    private SubWeapon _subWeapon;
+
+    private float _mainFireTimer;
+    private int _weaponLevel;
+
+    /// <summary>
+    /// 기본 무기 정보 설정.
+    /// </summary>
+    /// <param name="mainInfo"></param>
+    public void Init(InfoWeapon mainInfo)
+    {
+        _mainWeaponInfo = mainInfo;
+        _weaponLevel = 0;
+        _mainFireTimer = 0f;
+
+        ResourceManager.Instance.PreLoadReaource(ResourcePath.BULLET_PATH, _mainWeaponInfo.bulletPath, initCount: 10);    // 기본 무기 총알 풀 생성.
+    }
+
+    /// <summary>
+    /// 전략 무기 설정.
+    /// </summary>
+    /// <param name="subInfo"></param>
+    public void SetSubWeapon(InfoWeapon subInfo)
+    {
+        if (!subInfo.weaponPath.Equals(string.Empty))
+        {
+            _subWeapon = ResourceManager.Instance.LoadResource(ResourcePath.WEAPON_PATH, subInfo.weaponPath, subWeaponPosition).GetComponent<SubWeapon>();
+            _subWeapon.Init(subInfo);
+        }
+    }
 
     private void Update()
     {
         if(BattleManager.Instance.GameState == Def.DefEnum.GameState.PLAY)
         {
-            FireBullet();  //기본 무기 발사.
+            //기본 무기 발사. 발사 시간에 맞춰 탄환 발사.
+            if (_mainFireTimer >= _mainWeaponInfo.loadTime)
+            {
+                Bullet bul = ResourceManager.Instance.LoadResource(ResourcePath.WEAPON_PATH, _mainWeaponInfo.bulletPath, firePosition.transform.position, firePosition.transform.rotation).GetComponent<Bullet>();
+                bul.Init(_mainWeaponInfo, _weaponLevel);
+                SoundManager.Instance.PlaySound(_mainWeaponInfo.fireSFXPath);
+                _mainFireTimer = 0f;
+            }
+            else
+            {
+                _mainFireTimer += Time.deltaTime;
+            }
         }
     }
 
-    //무기 정보 설정.
-    public void Init(InfoWeapon mainInfo, InfoWeapon subInfo)
-    {
-        mainWeaponInfo = mainInfo;
-        weaponLevel = 0;
-
-        ResourceManager.Instance.CreateObjectPool(ResourcePath.BULLET_PATH, mainWeaponInfo.bulletPath);
-
-        if (!subInfo.weaponPath.Equals(""))
-        {
-            subWeapon = ResourceManager.Instance.LoadResource(ResourcePath.WEAPON_PATH, subInfo.weaponPath, subWeaponPosition).GetComponent<SubWeapon>();
-            subWeapon.Init(subInfo);
-        }
-    }
-
-    //무기 업그레이드 처리.
+    /// <summary>
+    /// 무기 업그레이드 처리.
+    /// </summary>
     public void UpgradeLevel()
     {
-        weaponLevel += 1;
-        subWeapon.UpgradeLevel(weaponLevel);
+        _weaponLevel += 1;
+        _subWeapon.UpgradeLevel(_weaponLevel);
     }
 
-    //발사 시간에 맞춰 탄환 발사.
-    void FireBullet()
-    {
-        if(mainFireTimer >= mainWeaponInfo.loadTime)
-        {
-            Bullet bul = ResourceManager.Instance.LoadResource(ResourcePath.WEAPON_PATH, mainWeaponInfo.bulletPath, firePosition.transform.position, firePosition.transform.rotation).GetComponent<Bullet>();
-            bul.Init(mainWeaponInfo, weaponLevel);
-            SoundManager.Instance.PlaySound(mainWeaponInfo.fireSFXPath);
-            mainFireTimer = 0f;
-        }
-        else
-        {
-            mainFireTimer += Time.deltaTime;
-        }
-    }
-
-    //전략 무기 발사 처리.
+    /// <summary>
+    /// 전략 무기 발사 처리.
+    /// </summary>
     public void FireSubweapon()
     {
-        subWeapon.Fire();
+        _subWeapon.Fire();
     }
 }

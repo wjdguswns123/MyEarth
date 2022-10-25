@@ -101,16 +101,25 @@ public class Planet : MonoBehaviour
     /// </summary>
     /// <param name="mainWeaponId"></param>
     /// <param name="subInfo"></param>
-    public void SetWeapon(int mainWeaponId, InfoWeapon subInfo)
+    public void SetWeapon(InfoWeapon mainWeaponInfo)
     {
         if(_turret != null)
         {
             ResourceManager.Instance.ReleaseResource(_turret.gameObject);
             _turret = null;
         }
-        InfoWeapon mainInfo = InfoManager.Instance.infoWeaponList[mainWeaponId];
+        InfoWeapon mainInfo = mainWeaponInfo;
         _turret = ResourceManager.Instance.LoadResource(ResourcePath.WEAPON_PATH, mainInfo.weaponPath, turretPos).GetComponent<Turret>();
-        _turret.Init(mainInfo, subInfo);
+        _turret.Init(mainInfo);
+    }
+
+    /// <summary>
+    /// 전략 무기 설정.
+    /// </summary>
+    /// <param name="subInfo"></param>
+    public void SetSubWeapon(InfoWeapon subInfo)
+    {
+        _turret.SetSubWeapon(subInfo);
     }
 
     /// <summary>

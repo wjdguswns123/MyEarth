@@ -23,7 +23,6 @@ public class BattleManager : Singleton<BattleManager>
     private int _currentResources;
     private int _upgradeCost;
     private int _upgradeLV;
-    private int _mainWeaponID;
     private bool _isGameResult;
 
     #region Process
@@ -69,7 +68,6 @@ public class BattleManager : Singleton<BattleManager>
 
         SpawnManager.Instance.Init();
         EffectManager.Instance.InitIngameEffects();
-        ResourceManager.Instance.PreLoadReaource(ResourcePath.BULLET_PATH, InfoManager.Instance.infoWeaponList[_mainWeaponID].bulletPath);    // 기본 무기 총알 풀 생성.
 
         SelectWeapon();
     }
@@ -377,7 +375,7 @@ public class BattleManager : Singleton<BattleManager>
     /// <param name="info"></param>
     public void SetSubWeapon(InfoWeapon info)
     {
-        planet.SetWeapon(_mainWeaponID, info);
+        planet.SetSubWeapon(info);
         ResourceManager.Instance.PreLoadReaource(ResourcePath.BULLET_PATH, info.bulletPath);
     }
 
@@ -442,13 +440,13 @@ public class BattleManager : Singleton<BattleManager>
     /// <summary>
     /// 기본 무기 ID 설정.
     /// </summary>
-    void SetMainWeaponID()
+    private void SetMainWeaponID()
     {
         foreach (InfoWeapon info in InfoManager.Instance.infoWeaponList.Values)
         {
             if (info.difficulty == (int)GameDifficulty && info.isNormal == 1)
             {
-                _mainWeaponID = info.ID;
+                planet.SetWeapon(info);
                 break;
             }
         }

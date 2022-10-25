@@ -7,7 +7,7 @@ public class ResourceManager : Singleton<ResourceManager>
     private Dictionary<string, ObjectPool> _objectPoolList;
 
     //해당 경로의 프리팹 미리 로딩.
-    public void PreLoadReaource(string path, string name)
+    public void PreLoadReaource(string path, string name, int initCount = 1)
     {
         if(_objectPoolList == null)
         {
@@ -16,7 +16,7 @@ public class ResourceManager : Singleton<ResourceManager>
 
         if (!_objectPoolList.ContainsKey(name))
         {
-            CreateObjectPool(path, name);
+            CreateObjectPool(path, name, initCount);
         }
     }
 
