@@ -54,7 +54,6 @@ public class ResourceManager : Singleton<ResourceManager>
         {
             CreateObjectPool(path, name);
         }
-        //GameObject go = _objectPoolList[path].GetObject();
         GameObject go = _objectPoolList[name].GetObject();
 
         if (parent != null)

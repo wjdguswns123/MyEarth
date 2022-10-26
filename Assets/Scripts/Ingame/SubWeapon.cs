@@ -11,7 +11,6 @@ public class SubWeapon : MonoBehaviour
     #endregion
 
     private InfoWeapon _subWeaponInfo;
-    private Bullet _lunchingBullet;
 
     private int _weaponLevel;
     private int _loadBulletCount;
@@ -20,18 +19,17 @@ public class SubWeapon : MonoBehaviour
     private float _loadTimer;
     private float _coolTimer;
     private float _doubleTouchTimer;
-
-    private bool _isLunching;
     private bool _isFireReady;
     private bool _isDoubleTouchEnable;
 
-    //무기 정보 설정.
+    /// <summary>
+    /// 무기 정보 설정.
+    /// </summary>
+    /// <param name="subInfo"></param>
     public void Init(InfoWeapon subInfo)
     {
         _subWeaponInfo = subInfo;
-        _lunchingBullet = null;
 
-        _isLunching = false;
         _isFireReady = true;
         _isDoubleTouchEnable = false;
         _loadBulletCount = 0;
@@ -91,74 +89,44 @@ public class SubWeapon : MonoBehaviour
         }
     }
 
-    //장전 간격 계산.
+    /// <summary>
+    /// 장전 간격 계산.
+    /// </summary>
+    /// <returns></returns>
     private float GetLoadTime()
     {
         float loadTime = _subWeaponInfo.loadTime - (_subWeaponInfo.loadTimeUpg * _weaponLevel);
         return loadTime >= _subWeaponInfo.loadTimeMax ? loadTime : _subWeaponInfo.loadTimeMax;
     }
 
-    //무기 업그레이드 처리.
-    public void UpgradeLevel(int level)
+    /// <summary>
+    /// 발사 지연 타이머 갱신.
+    /// </summary>
+    private void UpdateFireCoolTime()
     {
-        _weaponLevel = level;
-    }
-
-    //탄환 발사.
-    void FireBullet()
-    {
-        if(_isFireReady && _loadBulletCount > 0)
+        if (!_isFireReady)
         {
-            if(_isLunching)
+            if(_coolTimer >= _subWeaponInfo.coolTime)
             {
-                _lunchingBullet.Refresh();
+                _isFireReady = true;
             }
             else
             {
-                for (int i = 0; i < _subWeaponInfo.count; ++i)
-                {
-                    //발사 속도가 0이면 발사 지점 아래에 생성, 0보다 크면 부모 객체 없이 생성.
-                    Transform firePos = firePosition[(firePosition.Length > i ? i : i % firePosition.Length)];
-                    Bullet bul = _subWeaponInfo.speed > 0 ?
-                        ResourceManager.Instance.LoadResource(ResourcePath.WEAPON_PATH, _subWeaponInfo.bulletPath, firePos.position, firePos.rotation).GetComponent<Bullet>() :
-                        ResourceManager.Instance.LoadResource(ResourcePath.WEAPON_PATH, _subWeaponInfo.bulletPath, firePos).GetComponent<Bullet>();
-                    bul.Init(_subWeaponInfo, _weaponLevel);
-                    if (_isLunching)
-                    {
-                        _lunchingBullet = bul;
-                        bul.DestroyCallback = EndFire;
-                    }
-                }
+                _coolTimer += Time.deltaTime;
+                BattleManager.Instance.ingameUI.SetSubWeaponFireCoolTimer(_subWeaponInfo.coolTime, _coolTimer);
             }
-
-            _isFireReady = false;
-            _coolTimer = 0f;
-            _loadBulletCount--;
-            SoundManager.Instance.PlaySound(_subWeaponInfo.fireSFXPath);
-            SetSubWeaponLoadedCountUI();
         }
     }
 
-    //발사 지연 타이머 갱신.
-    void UpdateFireCoolTime()
+    /// <summary>
+    /// 더블 터치 타이머.
+    /// 터치 후 일정 시간이 지나면 더블 터치가 되지 않게 하는 타이머.
+    /// </summary>
+    private void UpdateDblTouchTime()
     {
-        if (!_isFireReady && _coolTimer >= _subWeaponInfo.coolTime)
+        if (_isDoubleTouchEnable)
         {
-            _isFireReady = true;
-        }
-        else if (!_isFireReady)
-        {
-            _coolTimer += Time.deltaTime;
-            BattleManager.Instance.ingameUI.SetSubWeaponFireCoolTimer(_subWeaponInfo.coolTime, _coolTimer);
-        }
-    }
-
-    //더블 터치 타이머 갱신.
-    void UpdateDblTouchTime()
-    {
-        if(_isDoubleTouchEnable)
-        {
-            if(_doubleTouchTimer >= 0.2f)
+            if (_doubleTouchTimer >= 0.2f)
             {
                 _isDoubleTouchEnable = false;
                 _doubleTouchTimer = 0f;
@@ -170,12 +138,14 @@ public class SubWeapon : MonoBehaviour
         }
     }
 
-    //더블 터치로 인한 탄환 발사.
-    void FireByDblTouch()
+    /// <summary>
+    /// 더블 터치로 인한 탄환 발사.
+    /// </summary>
+    private void FireByDblTouch()
     {
-        if(GameManager.Instance.IsEnableDlbTouchFire && Input.GetMouseButtonDown(0))
+        if (GameManager.Instance.IsEnableDlbTouchFire && Input.GetMouseButtonDown(0))
         {
-            if(_isDoubleTouchEnable)
+            if (_isDoubleTouchEnable)
             {
                 Fire();
                 _doubleTouchTimer = 0f;
@@ -187,24 +157,39 @@ public class SubWeapon : MonoBehaviour
             }
         }
     }
-    
-    //발사 종료 콜백 함수.
-    void EndFire()
-    {
-        _isLunching = false;
-        _lunchingBullet = null;
-    }
 
-    ////삭제될 때 리소스 매니저의 리스트에서 해당 무기의 탄환 오브젝트 해제 요청.
-    //private void OnDestroy()
-    //{
-    //    ResourceManager.Instance.DeleteResource(subWeaponInfo.bulletPath);
-    //}
-
-    //외부에서 받아오는 발사 처리.
+    /// <summary>
+    /// 탄환 발사.
+    /// </summary>
     public void Fire()
     {
-        FireBullet();
+        if (_isFireReady && _loadBulletCount > 0)
+        {
+            for (int i = 0; i < _subWeaponInfo.count; ++i)
+            {
+                //발사 속도가 0이면 발사 지점 아래에 생성, 0보다 크면 부모 객체 없이 생성.
+                Transform firePos = firePosition[(firePosition.Length > i ? i : i % firePosition.Length)];
+                Bullet bullet = _subWeaponInfo.speed > 0 ?
+                    ResourceManager.Instance.LoadResource(ResourcePath.WEAPON_PATH, _subWeaponInfo.bulletPath, firePos.position, firePos.rotation).GetComponent<Bullet>() :
+                    ResourceManager.Instance.LoadResource(ResourcePath.WEAPON_PATH, _subWeaponInfo.bulletPath, firePos).GetComponent<Bullet>();
+                bullet.Init(_subWeaponInfo, _weaponLevel);
+            }
+
+            _isFireReady = false;
+            _coolTimer = 0f;
+            _loadBulletCount--;
+            SoundManager.Instance.PlaySound(_subWeaponInfo.fireSFXPath);
+            SetSubWeaponLoadedCountUI();
+        }
+    }
+
+    /// <summary>
+    /// 전략 무기 레벨 설정.
+    /// </summary>
+    /// <param name="level"></param>
+    public void SetLevel(int level)
+    {
+        _weaponLevel = level;
     }
 
     //private void OnDrawGizmos()

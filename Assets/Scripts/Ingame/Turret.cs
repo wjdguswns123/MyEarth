@@ -69,7 +69,7 @@ public class Turret : MonoBehaviour
     public void UpgradeLevel()
     {
         _weaponLevel += 1;
-        _subWeapon.UpgradeLevel(_weaponLevel);
+        _subWeapon.SetLevel(_weaponLevel);
     }
 
     /// <summary>

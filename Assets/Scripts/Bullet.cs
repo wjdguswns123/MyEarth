@@ -152,7 +152,8 @@ public class Bullet : MonoBehaviour, InteractiveObject
 
         //Destroy(gameObject);
         //ResourceManager.Instance.DestroyObject(weaponInfo.bulletPath, gameObject);
-        gameObject.SetActive(false);
+        //gameObject.SetActive(false);
+        ResourceManager.Instance.ReleaseResource(this.gameObject);
     }
 
     //private void OnDrawGizmos()

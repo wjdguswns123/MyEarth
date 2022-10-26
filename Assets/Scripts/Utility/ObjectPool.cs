@@ -60,29 +60,32 @@ public class ObjectPool
     /// <returns></returns>
     public GameObject GetObject()
     {
-        if(_objectList == null || _objectList.Count <= 0)
-        {
-            CreateObject(_addCount);
-        }
-
         GameObject go = null;
-        for (int i = 0; i < _objectList.Count; ++i)
-        {
-            var obj = _objectList[i];
-            if(!obj.activeSelf)
-            {
-                go = obj;
-                go.SetActive(true);
-                go.transform.localPosition = Vector3.zero;
-                go.transform.localRotation = Quaternion.identity;
-                break;
-            }
-        }
-
-        if(go == null)
+        if (_objectList == null || _objectList.Count == 0)
         {
             go = CreateObject(_addCount);
         }
+        else
+        {
+            for (int i = 0; i < _objectList.Count; ++i)
+            {
+                var obj = _objectList[i];
+                if (!obj.activeSelf)
+                {
+                    go = obj;
+                    break;
+                }
+            }
+
+            if (go == null)
+            {
+                go = CreateObject(_addCount);
+            }
+        }
+
+        go.SetActive(true);
+        go.transform.localPosition = Vector3.zero;
+        go.transform.localRotation = Quaternion.identity;
 
         return go;
     }
@@ -115,6 +118,7 @@ public class ObjectPool
         {
             GameObject go = Object.Instantiate(_originalObject);
             go.SetActive(false);
+            go.name = _originalObject.name;
             go.transform.SetParent(_objectsParent);
             _objectList.Add(go);
             if(result == null)
