@@ -4,16 +4,24 @@ using Def;
 
 public class Enemy : MonoBehaviour, InteractiveObject
 {
-    enum MoveState { NORMAL, NEAR_PLANET, NO_DESTINATION }
+    public enum MoveState { NORMAL, NEAR_PLANET, NO_DESTINATION }
 
-    public Transform          firePosition;
+    #region Inspector
 
-    AttackPoint               destAttackPoint;
-    Planet                    planet;
-    Move[]                    mover = new Move[3];
+    public Transform firePosition;
+
+    #endregion
+
+    private AttackPoint _destAttackPoint;
+    private Planet _planet;
+    private Move[] _mover;
+    private MoveState _moveState = MoveState.NORMAL;
+
     DefEnum.EnemyState        state;
     public DefEnum.EnemyState State { get { return state; } }
-    MoveState                 moveState = MoveState.NORMAL;
+    
+    
+    
     float                     fireTimer = 0f;
     float                     speed;
     float                     attackSpeed;
@@ -27,10 +35,15 @@ public class Enemy : MonoBehaviour, InteractiveObject
 
     private void Start()
     {
+        if(_mover == null)
+        {
+            _mover = new Move[3];
+        }
+
         //일반 이동, 행성 근접했을 때, 목적지 없을 때 이동 클래스 설정.
-        mover[(int)MoveState.NORMAL] = new LinearMove(transform, speed);
-        mover[(int)MoveState.NEAR_PLANET] = new RotateMove(transform, planet.planetBody, speed);
-        mover[(int)MoveState.NO_DESTINATION] = new RotateMove(transform, planet.planetBody, speed);
+        _mover[(int)MoveState.NORMAL] = new LinearMove(transform, speed);
+        _mover[(int)MoveState.NEAR_PLANET] = new RotateMove(transform, _planet.planetBody, speed);
+        _mover[(int)MoveState.NO_DESTINATION] = new RotateMove(transform, _planet.planetBody, speed);
         state = DefEnum.EnemyState.MOVE;
     }
 
@@ -42,15 +55,15 @@ public class Enemy : MonoBehaviour, InteractiveObject
             switch(state)
             {
                 case DefEnum.EnemyState.MOVE:
-                    mover[(int)moveState].Moving();
-                    switch (moveState)
+                    _mover[(int)_moveState].Moving();
+                    switch (_moveState)
                     {
                         case MoveState.NORMAL:
                             if (!CheckArriveAttackPoint())
                             {
-                                if (Vector3.Distance(transform.position, planet.transform.position) <= planet.notInEnemyAreaRadius)
+                                if (Vector3.Distance(transform.position, _planet.transform.position) <= _planet.notInEnemyAreaRadius)
                                 {
-                                    moveState = MoveState.NEAR_PLANET;
+                                    _moveState = MoveState.NEAR_PLANET;
                                 }
                             }
                             break;
@@ -65,7 +78,7 @@ public class Enemy : MonoBehaviour, InteractiveObject
                     //일정 시간 후 삭제.
                     if (fireTimer >= attackSpeed)
                     {
-                        planet.Attacked(attack);
+                        _planet.Attacked(attack);
                         fireTimer = 0f;
                         if(!playedSound)
                         {
@@ -87,8 +100,8 @@ public class Enemy : MonoBehaviour, InteractiveObject
     {
         BattleManager.Instance.AddEnemy(this);
 
-        this.planet = BattleManager.Instance.planet;
-        destAttackPoint = BattleManager.Instance.SearchAttackPoint(this);
+        this._planet = BattleManager.Instance.planet;
+        _destAttackPoint = BattleManager.Instance.SearchAttackPoint(this);
         level        = DataManager.Instance.enemyLevelDataList[info.ID].Level;
         HP           = info.HP + (info.HPUpg * (level - 1));
         speed        = info.speed;
@@ -97,14 +110,14 @@ public class Enemy : MonoBehaviour, InteractiveObject
         enemyInfo    = info;
         state = DefEnum.EnemyState.MOVE;
         GetComponent<Collider>().enabled = true;
-        if (destAttackPoint != null)
+        if (_destAttackPoint != null)
         {
-            moveState = MoveState.NORMAL;
-            SetDirection(destAttackPoint);
+            _moveState = MoveState.NORMAL;
+            SetDirection(_destAttackPoint);
         }
         else
         {
-            moveState = MoveState.NO_DESTINATION;
+            _moveState = MoveState.NO_DESTINATION;
         }
     }
 
@@ -167,16 +180,16 @@ public class Enemy : MonoBehaviour, InteractiveObject
     //목적지에 이미 다른 적이 도착했으면 새로운 목적지 탐색.
     public void FullDestinationAttackPoint(AttackPoint point)
     {
-        if(state == DefEnum.EnemyState.MOVE && destAttackPoint == point)
+        if(state == DefEnum.EnemyState.MOVE && _destAttackPoint == point)
         {
-            destAttackPoint = BattleManager.Instance.SearchAttackPoint(this);
-            if(destAttackPoint != null)
+            _destAttackPoint = BattleManager.Instance.SearchAttackPoint(this);
+            if(_destAttackPoint != null)
             {
-                SetDirection(destAttackPoint);
+                SetDirection(_destAttackPoint);
             }
             else
             {
-                moveState = MoveState.NO_DESTINATION;
+                _moveState = MoveState.NO_DESTINATION;
             }
         }
     }
@@ -184,21 +197,21 @@ public class Enemy : MonoBehaviour, InteractiveObject
     //해당 지점으로 목적지 설정.
     public void ResetDestinationAttackPoint(AttackPoint point)
     {
-        destAttackPoint = point;
-        SetDirection(destAttackPoint);
-        moveState = MoveState.NORMAL;
+        _destAttackPoint = point;
+        SetDirection(_destAttackPoint);
+        _moveState = MoveState.NORMAL;
     }
 
     //목적지 도달 했는 지 확인.
     bool CheckArriveAttackPoint()
     {
         //목적지에 도달했을 때.
-        if (Vector3.Distance(transform.position, destAttackPoint.transform.position) <= 0.05f)
+        if (Vector3.Distance(transform.position, _destAttackPoint.transform.position) <= 0.05f)
         {
-            transform.position = destAttackPoint.transform.position;
+            transform.position = _destAttackPoint.transform.position;
             state = DefEnum.EnemyState.ATTACK;
-            transform.rotation = Quaternion.LookRotation((planet.planetBody.transform.position - transform.position), Vector3.forward);
-            BattleManager.Instance.ArrivalAttackPoint(this, destAttackPoint);
+            transform.rotation = Quaternion.LookRotation((_planet.planetBody.transform.position - transform.position), Vector3.forward);
+            BattleManager.Instance.ArrivalAttackPoint(this, _destAttackPoint);
             _attackEffect = EffectManager.Instance.LoadEffect("Attack_01", firePosition.position, firePosition.rotation);
 
             return true;

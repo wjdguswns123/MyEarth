@@ -141,8 +141,11 @@ public class Bullet : MonoBehaviour, InteractiveObject
     {
     }
 
-    //공격력 계산.
-    int GetAttackValue()
+    /// <summary>
+    /// 공격력 계산.
+    /// </summary>
+    /// <returns></returns>
+    private int GetAttackValue()
     {
         //반올림 계산이 5까지 버려서 5는 올리기 위해 0.1 추가.
         return _weaponInfo.attack + Mathf.RoundToInt((_weaponInfo.attackUpg + 0.1f) * _weaponLevel);
