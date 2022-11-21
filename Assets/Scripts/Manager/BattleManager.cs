@@ -258,7 +258,7 @@ public class BattleManager : Singleton<BattleManager>
                 atkPoint.ArriveEnemy(enemy);
                 for (int j = 0; j < _liveEnemyList.Count; ++j)
                 {
-                    _liveEnemyList[j].FullDestinationAttackPoint(atkPoint);
+                    _liveEnemyList[j].FullAttackPoint(atkPoint);
                 }
                 break;
             }
@@ -334,7 +334,7 @@ public class BattleManager : Singleton<BattleManager>
                 Enemy result = SearchNearMovingEnemy(atkPoint);
                 if (result != null)
                 {
-                    result.ResetDestinationAttackPoint(atkPoint);
+                    result.ResetAttackPoint(atkPoint);
                 }
                 break;
             }

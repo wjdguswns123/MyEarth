@@ -4,6 +4,8 @@ using Def;
 
 public class Enemy : MonoBehaviour, InteractiveObject
 {
+    private const float ATTACK_POINT_GAP = 0.05f;
+
     public enum MoveState { NORMAL, NEAR_PLANET, NO_DESTINATION }
 
     #region Inspector
@@ -16,22 +18,20 @@ public class Enemy : MonoBehaviour, InteractiveObject
     private Planet _planet;
     private Move[] _mover;
     private MoveState _moveState = MoveState.NORMAL;
-
-    DefEnum.EnemyState        state;
-    public DefEnum.EnemyState State { get { return state; } }
-    
-    
-    
-    float                     fireTimer = 0f;
-    float                     speed;
-    float                     attackSpeed;
-    int                       HP  = 1;
-    int                       attack;
-    int                       level = 0;
-    bool                      playedSound = false;
-    InfoEnemy                 enemyInfo;
-
+    private InfoEnemy _enemyInfo;
     private GameObject _attackEffect;
+
+    private float _fireTimer;
+    private float _moveSpeed;
+    private float _attackSpeed;
+    private int _hp;
+    private int _attack;
+    private int _level = 0;
+    private bool _playedSound = false;
+
+    private Collider _collider;
+
+    public DefEnum.EnemyState State { get; private set; }
 
     private void Start()
     {
@@ -41,18 +41,18 @@ public class Enemy : MonoBehaviour, InteractiveObject
         }
 
         //일반 이동, 행성 근접했을 때, 목적지 없을 때 이동 클래스 설정.
-        _mover[(int)MoveState.NORMAL] = new LinearMove(transform, speed);
-        _mover[(int)MoveState.NEAR_PLANET] = new RotateMove(transform, _planet.planetBody, speed);
-        _mover[(int)MoveState.NO_DESTINATION] = new RotateMove(transform, _planet.planetBody, speed);
-        state = DefEnum.EnemyState.MOVE;
+        _mover[(int)MoveState.NORMAL] = new LinearMove(transform, _moveSpeed);
+        _mover[(int)MoveState.NEAR_PLANET] = new RotateMove(transform, _planet.planetBody, _moveSpeed);
+        _mover[(int)MoveState.NO_DESTINATION] = new RotateMove(transform, _planet.planetBody, _moveSpeed);
+        State = DefEnum.EnemyState.MOVE;
     }
 
     // Update is called once per frame
-    void Update ()
+    private void Update ()
     {
         if(BattleManager.Instance.GameState == DefEnum.GameState.PLAY)
         {
-            switch(state)
+            switch(State)
             {
                 case DefEnum.EnemyState.MOVE:
                     _mover[(int)_moveState].Moving();
@@ -61,7 +61,9 @@ public class Enemy : MonoBehaviour, InteractiveObject
                         case MoveState.NORMAL:
                             if (!CheckArriveAttackPoint())
                             {
-                                if (Vector3.Distance(transform.position, _planet.transform.position) <= _planet.notInEnemyAreaRadius)
+                                // 적이 행성 공격을 할 수 있는 반경에 도달했으면, 이동 형태 변경.
+                                float dist = Vector3.SqrMagnitude(transform.position - _planet.transform.position);
+                                if (dist <= _planet.enemyAttackRadius * _planet.enemyAttackRadius)
                                 {
                                     _moveState = MoveState.NEAR_PLANET;
                                 }
@@ -75,41 +77,46 @@ public class Enemy : MonoBehaviour, InteractiveObject
                     }
                     break;
                 case DefEnum.EnemyState.ATTACK:
-                    //일정 시간 후 삭제.
-                    if (fireTimer >= attackSpeed)
+                    if (_fireTimer >= _attackSpeed)
                     {
-                        _planet.Attacked(attack);
-                        fireTimer = 0f;
-                        if(!playedSound)
+                        _planet.Attacked(_attack);
+                        _fireTimer = 0f;
+                        if(!_playedSound)
                         {
                             SoundManager.Instance.PlaySound("FireSFX_5");
-                            playedSound = true;
+                            _playedSound = true;
                         }
                     }
                     else
                     {
-                        fireTimer += Time.deltaTime;
+                        _fireTimer += Time.deltaTime;
                     }
                     break;
             }
         }
     }
 
-    //플레이어 트랜스폼 받아 초기화.
+    /// <summary>
+    /// 플레이어 트랜스폼 받아 초기화.
+    /// </summary>
+    /// <param name="info"></param>
     public void Init(InfoEnemy info)
     {
         BattleManager.Instance.AddEnemy(this);
 
         this._planet = BattleManager.Instance.planet;
         _destAttackPoint = BattleManager.Instance.SearchAttackPoint(this);
-        level        = DataManager.Instance.enemyLevelDataList[info.ID].Level;
-        HP           = info.HP + (info.HPUpg * (level - 1));
-        speed        = info.speed;
-        attackSpeed  = info.attackSpeed;
-        attack       = info.attack + (info.attackUpg * (level - 1));
-        enemyInfo    = info;
-        state = DefEnum.EnemyState.MOVE;
-        GetComponent<Collider>().enabled = true;
+        _level       = DataManager.Instance.enemyLevelDataList[info.ID].Level;
+        _hp          = info.HP + (info.HPUpg * (_level - 1));
+        _moveSpeed   = info.speed;
+        _attackSpeed = info.attackSpeed;
+        _attack      = info.attack + (info.attackUpg * (_level - 1));
+        _enemyInfo   = info;
+        _fireTimer   = 0f;
+        State = DefEnum.EnemyState.MOVE;
+
+        _collider = GetComponent<Collider>();
+        _collider.enabled = true;
         if (_destAttackPoint != null)
         {
             _moveState = MoveState.NORMAL;
@@ -121,8 +128,11 @@ public class Enemy : MonoBehaviour, InteractiveObject
         }
     }
 
-    //이동 방향 설정.
-    void SetDirection(AttackPoint atkPoint)
+    /// <summary>
+    /// 이동 방향 설정.
+    /// </summary>
+    /// <param name="atkPoint"></param>
+    private void SetDirection(AttackPoint atkPoint)
     {
         if(atkPoint != null)
         {
@@ -131,15 +141,18 @@ public class Enemy : MonoBehaviour, InteractiveObject
         }
     }
 
-    //피격 시 처리.
+    /// <summary>
+    /// 피격 시 처리.
+    /// </summary>
+    /// <param name="atk"></param>
     public void Attacked(int atk)
     {
-        if(HP > 0)
+        if(_hp > 0)
         {
-            HP -= atk;
+            _hp -= atk;
             EffectManager.Instance.LoadEffect("Bang_03", transform.position, transform.rotation);
 
-            if (HP <= 0)
+            if (_hp <= 0)
             {
                 Destroy();
                 BattleManager.Instance.CheckFinishWave();
@@ -147,40 +160,34 @@ public class Enemy : MonoBehaviour, InteractiveObject
         }
     }
 
-    //자신 삭제. 배틀매니저에 삭제 요청.
+    /// <summary>
+    /// 자신 삭제. 배틀매니저에 삭제 요청.
+    /// </summary>
     public void Destroy()
     {
-        SoundManager.Instance.PlaySound(enemyInfo.destroySFXPath);
+        SoundManager.Instance.PlaySound(_enemyInfo.destroySFXPath);
         BattleManager.Instance.RemoveEnemy(this);
-        DestroyOnly();
-    }
 
-    //자신 삭제.
-    public void DestroyOnly()
-    {
-        GetComponent<Collider>().enabled = false;
-        BattleManager.Instance.AddScore(enemyInfo.score);
-        BattleManager.Instance.AddResources(enemyInfo.resource + (enemyInfo.resourceUpg * (level - 1)));
+        _collider.enabled = false;
+        BattleManager.Instance.AddScore(_enemyInfo.score);
+        BattleManager.Instance.AddResources(_enemyInfo.resource + (_enemyInfo.resourceUpg * (_level - 1)));
         EffectManager.Instance.LoadEffect("Bang_05", transform.position, Quaternion.identity);
-        if(firePosition.childCount > 0)
-        {
-            firePosition.DestroyChildren();
-        }
-        //Destroy(gameObject);
-        //ResourceManager.Instance.DestroyObject(enemyInfo.prefabPath, gameObject);
-        gameObject.SetActive(false);
+        ResourceManager.Instance.ReleaseResource(gameObject);
 
-        if(_attackEffect != null)
+        if (_attackEffect != null)
         {
             _attackEffect.SetActive(false);
             _attackEffect = null;
         }
     }
 
-    //목적지에 이미 다른 적이 도착했으면 새로운 목적지 탐색.
-    public void FullDestinationAttackPoint(AttackPoint point)
+    /// <summary>
+    /// 목적지에 이미 다른 적이 도착했으면 새로운 목적지 탐색.
+    /// </summary>
+    /// <param name="point"></param>
+    public void FullAttackPoint(AttackPoint point)
     {
-        if(state == DefEnum.EnemyState.MOVE && _destAttackPoint == point)
+        if(State == DefEnum.EnemyState.MOVE && _destAttackPoint == point)
         {
             _destAttackPoint = BattleManager.Instance.SearchAttackPoint(this);
             if(_destAttackPoint != null)
@@ -194,29 +201,35 @@ public class Enemy : MonoBehaviour, InteractiveObject
         }
     }
 
-    //해당 지점으로 목적지 설정.
-    public void ResetDestinationAttackPoint(AttackPoint point)
+    /// <summary>
+    /// 해당 지점으로 목적지 설정.
+    /// </summary>
+    /// <param name="point"></param>
+    public void ResetAttackPoint(AttackPoint point)
     {
         _destAttackPoint = point;
         SetDirection(_destAttackPoint);
         _moveState = MoveState.NORMAL;
     }
 
-    //목적지 도달 했는 지 확인.
-    bool CheckArriveAttackPoint()
+    /// <summary>
+    /// 목적지 도달 했는 지 확인.
+    /// </summary>
+    /// <returns></returns>
+    private bool CheckArriveAttackPoint()
     {
         //목적지에 도달했을 때.
-        if (Vector3.Distance(transform.position, _destAttackPoint.transform.position) <= 0.05f)
+        float dist = Vector3.SqrMagnitude(transform.position - _destAttackPoint.transform.position);
+        if (dist <= ATTACK_POINT_GAP * ATTACK_POINT_GAP)
         {
+            State = DefEnum.EnemyState.ATTACK;
             transform.position = _destAttackPoint.transform.position;
-            state = DefEnum.EnemyState.ATTACK;
             transform.rotation = Quaternion.LookRotation((_planet.planetBody.transform.position - transform.position), Vector3.forward);
             BattleManager.Instance.ArrivalAttackPoint(this, _destAttackPoint);
             _attackEffect = EffectManager.Instance.LoadEffect("Attack_01", firePosition.position, firePosition.rotation);
 
             return true;
         }
-
         return false;
     }
 

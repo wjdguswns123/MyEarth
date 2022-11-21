@@ -9,7 +9,7 @@ public class Planet : MonoBehaviour
     public Transform planetBody;
     public Transform turretPos;
     public Transform planetMesh;
-    public float     notInEnemyAreaRadius;
+    public float     enemyAttackRadius;
 
     #endregion
 
@@ -181,6 +181,6 @@ public class Planet : MonoBehaviour
     ////적 접근 불가 거리 기즈모 그리기.
     //private void OnDrawGizmos()
     //{
-    //    Gizmos.DrawWireSphere(transform.position, notInEnemyAreaRadius);
+    //    Gizmos.DrawWireSphere(transform.position, enemyAttackRadius);
     //}
 }
