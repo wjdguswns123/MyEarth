@@ -31,7 +31,7 @@ public class IngameSceneManager : Singleton<IngameSceneManager>
         if(sceneList.ContainsKey(sceneName))
         {
             sceneList[sceneName].gameObject.SetActive(true);
-            sceneList[sceneName].Init(endCallback);
+            sceneList[sceneName].SetEndCallback(endCallback);
 
             currentScene = sceneList[sceneName];
         }
