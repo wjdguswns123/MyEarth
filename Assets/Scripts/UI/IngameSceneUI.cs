@@ -3,17 +3,17 @@ using System.Collections;
 
 public class IngameSceneUI : MonoBehaviour
 {
-    Collider uiCollider;
+    private Collider _collider;
 
 	// Use this for initialization
-	void Start ()
+	private void Start ()
     {
-        uiCollider = GetComponentInChildren<Collider>();
+        _collider = GetComponentInChildren<Collider>();
         transform.localPosition = Vector3.back * 5f;
     }
 	
 	// Update is called once per frame
-	void Update ()
+	private void Update ()
     {
 #if UNITY_EDITOR
         //해당 UI의 콜라이더 클릭하면 다음 이벤트로.
@@ -25,7 +25,7 @@ public class IngameSceneUI : MonoBehaviour
 
             if (Physics.Raycast(ray, out hit))
             {
-                if (hit.collider == uiCollider)
+                if (hit.collider == _collider)
                 {
                     IngameSceneManager.Instance.CurrentScene.NextEvent();
                 }
@@ -43,7 +43,7 @@ public class IngameSceneUI : MonoBehaviour
 
                         if (Physics.Raycast(ray, out hit))
                         {
-                            if (hit.collider == uiCollider)
+                            if (hit.collider == _collider)
                             {
                                 IngameSceneManager.Instance.CurrentScene.NextEvent();
                             }

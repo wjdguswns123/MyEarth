@@ -4,36 +4,41 @@ using System.Collections.Generic;
 
 public class IngameSceneManager : Singleton<IngameSceneManager>
 {
-    Dictionary<string, IngameScene> sceneList = new Dictionary<string, IngameScene>();
+    private Dictionary<string, IngameScene> _sceneList;
 
-    IngameScene        currentScene;
-    public IngameScene CurrentScene { get { return currentScene; } }
+    public IngameScene CurrentScene { get; private set; }
 
     private void Awake()
     {
         //현재 씬에 있는 모든 연출 등록.
         IngameScene[] scenes = gameObject.GetComponentsInChildren<IngameScene>();
+        _sceneList = new Dictionary<string, IngameScene>();
 
         int count = scenes.Length;
         for(int i = 0; i < count; ++i)
         {
-            if(!sceneList.ContainsKey(scenes[i].name))
+            if(!_sceneList.ContainsKey(scenes[i].name))
             {
                 scenes[i].gameObject.SetActive(false);
-                sceneList.Add(scenes[i].name, scenes[i]);
+                _sceneList.Add(scenes[i].name, scenes[i]);
             }
         }
     }
 
-    //해당 이름의 연출 출력.
+    /// <summary>
+    /// 해당 이름의 연출 출력.
+    /// </summary>
+    /// <param name="sceneName"></param>
+    /// <param name="endCallback"></param>
     public void PlayIngameScene(string sceneName, System.Action endCallback = null)
     {
-        if(sceneList.ContainsKey(sceneName))
+        if(_sceneList.ContainsKey(sceneName))
         {
-            sceneList[sceneName].gameObject.SetActive(true);
-            sceneList[sceneName].SetEndCallback(endCallback);
+            var scene = _sceneList[sceneName];
+            scene.gameObject.SetActive(true);
+            scene.SetEndCallback(endCallback);
 
-            currentScene = sceneList[sceneName];
+            CurrentScene = scene;
         }
     }
 }

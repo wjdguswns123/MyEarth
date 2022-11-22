@@ -3,8 +3,12 @@ using System.Collections;
 
 public class IntroUI : MonoBehaviour
 {
+    #region Inspector
+
     public UILabel bestScoreLabel;
     public UILabel difficulltyLabel;
+
+    #endregion
 
     private Def.DefEnum.Difficulty _difficulty;
 
@@ -17,7 +21,9 @@ public class IntroUI : MonoBehaviour
         difficulltyLabel.text = _difficulty.ToString();
     }
 
-    //시작 버튼 클릭 처리.
+    /// <summary>
+    /// 시작 버튼 클릭 처리.
+    /// </summary>
     public void OnStartBtnClick()
     {
         BattleManager.Instance.StartProcess(_difficulty);
@@ -29,14 +35,18 @@ public class IntroUI : MonoBehaviour
         Destroy(this.gameObject);
     }
 
-    //기능 버튼 클릭 처리.
+    /// <summary>
+    /// 기능 버튼 클릭 처리.
+    /// </summary>
     public void OnOptionBtnClick()
     {
         OptionUI ui = UIManager.Instance.LoadPopupUI("OptionUI").GetComponent<OptionUI>();
         ui.Init();
     }
 
-    //더 높은 난이도 선택 버튼 클릭 처리.
+    /// <summary>
+    /// 더 높은 난이도 선택 버튼 클릭 처리.
+    /// </summary>
     public void OnHighDifficultyBtnClick()
     {
         if(_difficulty < Def.DefEnum.Difficulty.HARD)
@@ -47,7 +57,9 @@ public class IntroUI : MonoBehaviour
         //Debug.Log("난이도 높게 " + DataManager.Instance.GameDifficulty.ToString());
     }
 
-    //더 낮은 난이도 선택 버튼 클릭 처리.
+    /// <summary>
+    /// 더 낮은 난이도 선택 버튼 클릭 처리.
+    /// </summary>
     public void OnLowDifficultyBtnClick()
     {
         if (_difficulty > Def.DefEnum.Difficulty.EASY)

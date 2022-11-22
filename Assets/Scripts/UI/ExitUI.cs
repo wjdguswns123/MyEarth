@@ -3,7 +3,9 @@ using System.Collections;
 
 public class ExitUI : MonoBehaviour
 {
-    //게임 종료하기 처리.
+    /// <summary>
+    /// 게임 종료하기 처리.
+    /// </summary>
     public void OnYesBtnClick()
     {
 #if UNITY_EDITOR
@@ -13,7 +15,9 @@ public class ExitUI : MonoBehaviour
 #endif
     }
 
-    //게임 종료 취소 처리.
+    /// <summary>
+    /// 게임 종료 취소 처리.
+    /// </summary>
     public void OnNoBtnClick()
     {
         UIManager.Instance.ClosePopupUI();
