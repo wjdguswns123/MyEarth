@@ -2,7 +2,7 @@
 using System.Collections;
 using Def;
 
-public class Enemy : MonoBehaviour, InteractiveObject
+public class Enemy : MonoBehaviour
 {
     private const float ATTACK_POINT_GAP = 0.05f;
 

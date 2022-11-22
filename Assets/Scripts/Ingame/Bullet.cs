@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Bullet : MonoBehaviour, InteractiveObject
+public class Bullet : MonoBehaviour
 {
     private Move _mover;
     private InfoWeapon _weaponInfo;
@@ -39,7 +39,7 @@ public class Bullet : MonoBehaviour, InteractiveObject
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         if (BattleManager.Instance.GameState == Def.DefEnum.GameState.PLAY)
         {
@@ -106,7 +106,7 @@ public class Bullet : MonoBehaviour, InteractiveObject
         Destroy();
         if (_weaponInfo.attackType == Def.DefEnum.AttackType.SINGLE)
         {
-            InteractiveObject obj = other.GetComponent<InteractiveObject>();
+            Enemy obj = other.GetComponent<Enemy>();
             if (obj != null)
             {
                 obj.Attacked(GetAttackValue());
@@ -135,10 +135,6 @@ public class Bullet : MonoBehaviour, InteractiveObject
         }
 
         ResourceManager.Instance.ReleaseResource(this.gameObject);
-    }
-
-    public void Attacked(int atk)
-    {
     }
 
     /// <summary>
