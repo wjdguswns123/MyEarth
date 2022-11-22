@@ -3,15 +3,19 @@ using System.Collections;
 
 public class DelayedDestroyer : MonoBehaviour
 {
+    #region Inspector
+
     public float delay = 0f;
 
+    #endregion
+
     // Use this for initialization
-    void Start ()
+    private void Start ()
     {
         StartCoroutine(DelayedDestroy());
 	}
 
-    IEnumerator DelayedDestroy()
+    private IEnumerator DelayedDestroy()
     {
         yield return new WaitForSeconds(delay);
 

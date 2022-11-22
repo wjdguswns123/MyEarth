@@ -91,10 +91,7 @@ public class IngameScene : MonoBehaviour
                         _currentUI = null;
                     }
                     this.gameObject.SetActive(false);
-                    if(_sceneEndCallback != null)
-                    {
-                        _sceneEndCallback();
-                    }
+                    _sceneEndCallback?.Invoke();
                     return;
             }
             _currentIndex++;

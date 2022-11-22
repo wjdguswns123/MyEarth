@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 
-//적 이동 베이스 클래스.
+/// <summary>
+/// 적 이동 베이스 클래스.
+/// </summary>
 public abstract class Move
 {
     protected Transform moveTransform;
