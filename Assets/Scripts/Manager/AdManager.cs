@@ -5,62 +5,105 @@ using GoogleMobileAds.Api;
 
 public class AdManager : Singleton<AdManager>
 {
-    BannerView     bannerAd;
-    InterstitialAd interstitialAd;
-
-	// Use this for initialization
-	void Awake ()
-    {
-        //RequestBanner();
-        RequestInterstitialAd();
-    }
-
-    //배너 광고 요청.
-    void RequestBanner()
-    {
-        string addID;
-
 #if UNITY_ANDROID
-        addID = "ca-app-pub-7841868880233499/4607789693";
+    private string _adUnitId = "ca-app-pub-3940256099942544/1033173712";
+#elif UNITY_IPHONE
+    private string _adUnitId = "ca-app-pub-3940256099942544/6978759866";
 #else
-        addID = "";
+    private string _adUnitId = "unused";
 #endif
-        bannerAd = new BannerView(addID, AdSize.SmartBanner, AdPosition.Top);
-        AdRequest request = new AdRequest.Builder().Build();
-        //테스트 기기 설정.
-        //AdRequest request = new AdRequest.Builder().AddTestDevice(AdRequest.TestDeviceSimulator).AddTestDevice("351623070756261").Build();
-        bannerAd.LoadAd(request);
+
+    private InterstitialAd _interstitialAd;
+
+    private System.Action _onCloseInterstitialAd;
+
+    private void Start()
+    {
+        Debug.Log("AdManager Start.");
+        MobileAds.Initialize((InitializationStatus status) =>
+        {
+            LoadInterstitialAd();
+        });
     }
 
-    //전면 광고 요청.
-    void RequestInterstitialAd()
+    /// <summary>
+    /// 전면 광고 로드.
+    /// </summary>
+    private void LoadInterstitialAd()
     {
-#if UNITY_ANDROID
-        interstitialAd = new InterstitialAd("ca-app-pub-7841868880233499/2835543023");
-#else
-        interstitialAd = new InterstitialAd("");
-#endif
-        AdRequest request = new AdRequest.Builder().Build();
-        interstitialAd.LoadAd(request);
-        interstitialAd.OnAdClosed += OnAdClose;
+        if (_interstitialAd != null)
+        {
+            _interstitialAd.Destroy();
+            _interstitialAd = null;
+        }
+
+        Debug.Log("InterstitialAd Load Start.");
+
+        var adRequest = new AdRequest();
+
+        InterstitialAd.Load(_adUnitId, adRequest, (InterstitialAd ad, LoadAdError error) =>
+        {
+            if (error != null || ad == null)
+            {
+                Debug.LogError("interstitial ad failed to load an ad with error : " + error);
+                return;
+            }
+            _interstitialAd = ad;
+            RegisterEventHandlers(ad);
+
+            Debug.Log("InterstitialAd Load Complete.");
+        });
     }
 
-    //전면 광고 닫기 처리.
-    void OnAdClose(object sender, EventArgs e)
+    /// <summary>
+    /// 전면 광고 이벤트 등록.
+    /// </summary>
+    /// <param name="ad"></param>
+    private void RegisterEventHandlers(InterstitialAd ad)
     {
-        interstitialAd.Destroy();
-        RequestInterstitialAd();
+        ad.OnAdPaid += (AdValue value) =>
+        {
+            Debug.Log(string.Format("Rewarded interstitial ad paid {0} {1}.", value.Value, value.CurrencyCode));
+        };
+
+        ad.OnAdImpressionRecorded += () =>
+        {
+            Debug.Log("Rewarded interstitial ad recorded an impression");
+        };
+
+        ad.OnAdClicked += () =>
+        {
+            Debug.Log("Rewarded interstitial ad was clicked.");
+        };
+
+        ad.OnAdFullScreenContentOpened += () =>
+        {
+            Debug.Log("Rewarded interstitial ad full screen content opened.");
+        };
+
+        ad.OnAdFullScreenContentClosed += () =>
+        {
+            Debug.Log("Rewarded interstitial ad full screen content closed.");
+            LoadInterstitialAd();
+            _onCloseInterstitialAd?.Invoke();
+        };
+
+        ad.OnAdFullScreenContentFailed += (AdError error) =>
+        {
+            Debug.LogError("Rewarded interstitial ad failed to open full screen content with error : " + error);
+        };
     }
 
-    //배너 광고 보여주기.
-    public void ShowBannerAd()
+    /// <summary>
+    /// 전면 광고 보여주기.
+    /// </summary>
+    /// <param name="onClose"> 광고 종료 콜백. </param>
+    public void ShowInterstitialAd(System.Action onClose)
     {
-        bannerAd.Show();
-    }
-
-    //전면 광고 보여주기.
-    public void ShowInterstitialAd()
-    {
-        interstitialAd.Show();
+        if (_interstitialAd != null && _interstitialAd.CanShowAd())
+        {
+            _onCloseInterstitialAd = onClose;
+            _interstitialAd.Show();
+        }
     }
 }

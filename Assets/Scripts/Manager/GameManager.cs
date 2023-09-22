@@ -23,7 +23,7 @@ public class GameManager : Singleton<GameManager>
     }
 
     // Update is called once per frame
-    void Update ()
+    private void Update ()
     {
         //pc에선 esc, 모바일에선 뒤로가기 버튼 터치 설정.
         if(Input.GetKeyDown(KeyCode.Escape))
