@@ -64,9 +64,6 @@ public class ResultUI : MonoBehaviour
     {
         yield return YieldCache.WaitForSeconds(_showUITime);
 
-        //UIManager.Instance.ClosePopupUI();
-        //BattleManager.Instance.GoIntro();
-        //AdManager.Instance.ShowInterstitialAd();
         AdManager.Instance.ShowInterstitialAd(() =>
         {
             UIManager.Instance.ClosePopupUI();

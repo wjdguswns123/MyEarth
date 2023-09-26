@@ -5,10 +5,11 @@ using GoogleMobileAds.Api;
 
 public class AdManager : Singleton<AdManager>
 {
+    private const int SHOW_INTERSTITIALAD_COUNT = 2;
+
 #if UNITY_ANDROID
-    private string _adUnitId = "ca-app-pub-3940256099942544/1033173712";
-#elif UNITY_IPHONE
-    private string _adUnitId = "ca-app-pub-3940256099942544/6978759866";
+    //private string _adUnitId = "ca-app-pub-3940256099942544/1033173712";
+    private string _adUnitId = "ca-app-pub-7841868880233499/2835543023";
 #else
     private string _adUnitId = "unused";
 #endif
@@ -17,13 +18,32 @@ public class AdManager : Singleton<AdManager>
 
     private System.Action _onCloseInterstitialAd;
 
+    private bool _isCloseInterstitialAd;
+    private int _showInterstitialAdCount;
+
     private void Start()
     {
         Debug.Log("AdManager Start.");
+
+        _isCloseInterstitialAd = false;
+        _showInterstitialAdCount = 0;
+
         MobileAds.Initialize((InitializationStatus status) =>
         {
             LoadInterstitialAd();
         });
+    }
+
+    private void Update()
+    {
+        // 전면 광고 닫기 콜백 처리.
+        // 스레드 문제 때문에 업데이트에서 처리.
+        if(_isCloseInterstitialAd)
+        {
+            _isCloseInterstitialAd = false;
+            LoadInterstitialAd();
+            _onCloseInterstitialAd?.Invoke();
+        }
     }
 
     /// <summary>
@@ -84,8 +104,7 @@ public class AdManager : Singleton<AdManager>
         ad.OnAdFullScreenContentClosed += () =>
         {
             Debug.Log("Rewarded interstitial ad full screen content closed.");
-            LoadInterstitialAd();
-            _onCloseInterstitialAd?.Invoke();
+            _isCloseInterstitialAd = true;
         };
 
         ad.OnAdFullScreenContentFailed += (AdError error) =>
@@ -100,10 +119,19 @@ public class AdManager : Singleton<AdManager>
     /// <param name="onClose"> 광고 종료 콜백. </param>
     public void ShowInterstitialAd(System.Action onClose)
     {
-        if (_interstitialAd != null && _interstitialAd.CanShowAd())
+        if(_showInterstitialAdCount < SHOW_INTERSTITIALAD_COUNT)
         {
-            _onCloseInterstitialAd = onClose;
-            _interstitialAd.Show();
+            ++_showInterstitialAdCount;
+            onClose?.Invoke();
+        }
+        else
+        {
+            _showInterstitialAdCount = 0;
+            if (_interstitialAd != null && _interstitialAd.CanShowAd())
+            {
+                _onCloseInterstitialAd = onClose;
+                _interstitialAd.Show();
+            }
         }
     }
 }
