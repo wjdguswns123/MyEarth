@@ -7,7 +7,7 @@ public class AttackPoint : MonoBehaviour
     /// <summary>
     /// 해당 포인트에 도착한 적.
     /// </summary>
-    public Enemy arrivalEnemy { get; private set; }
+    public Enemy ArrivalEnemy { get; private set; }
 
     /// <summary>
     /// 도착한 적이 있는지 확인.
@@ -15,7 +15,7 @@ public class AttackPoint : MonoBehaviour
     /// <returns></returns>
     public bool IsArriveEnemy()
     {
-        return arrivalEnemy != null;
+        return ArrivalEnemy != null;
     }
 
     /// <summary>
@@ -25,7 +25,7 @@ public class AttackPoint : MonoBehaviour
     /// <returns></returns>
     public bool IsArriveThisEnemy(Enemy enemy)
     {
-        return arrivalEnemy == enemy;
+        return ArrivalEnemy == enemy;
     }
 
     /// <summary>
@@ -34,7 +34,7 @@ public class AttackPoint : MonoBehaviour
     /// <param name="enemy"></param>
     public void ArriveEnemy(Enemy enemy)
     {
-        arrivalEnemy = enemy;
+        ArrivalEnemy = enemy;
     }
 
     /// <summary>
@@ -42,6 +42,6 @@ public class AttackPoint : MonoBehaviour
     /// </summary>
     public void Clear()
     {
-        arrivalEnemy = null;
+        ArrivalEnemy = null;
     }
 }

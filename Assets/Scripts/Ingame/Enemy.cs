@@ -106,7 +106,7 @@ public class Enemy : MonoBehaviour
 
         this._planet = BattleManager.Instance.planet;
         _destAttackPoint = BattleManager.Instance.SearchAttackPoint(this);
-        _level       = DataManager.Instance.enemyLevelDataList[info.ID].Level;
+        _level       = DataManager.Instance.enemyLevelDataList[info.ID].level;
         _hp          = info.HP + (info.HPUpg * (_level - 1));
         _moveSpeed   = info.speed;
         _attackSpeed = info.attackSpeed;

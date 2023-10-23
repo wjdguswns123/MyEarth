@@ -6,22 +6,22 @@ using Def;
 //적 레벨 정보 데이터.
 public class EnemyLevelData
 {
-    public int EnemyID;
-    public int Level;
-    public int PrevWave;
+    public int enemyID;
+    public int level;
+    public int prevWave;
 
     public EnemyLevelData()
     {
-        EnemyID  = 0;
-        Level    = 0;
-        PrevWave = 0;
+        enemyID  = 0;
+        level    = 0;
+        prevWave = 0;
     }
 
     public EnemyLevelData(int id, int wave)
     {
-        EnemyID  = id;
-        Level    = 1;
-        PrevWave = wave;
+        enemyID  = id;
+        level    = 1;
+        prevWave = wave;
     }
 }
 

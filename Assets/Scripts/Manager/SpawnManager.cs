@@ -325,10 +325,10 @@ public class SpawnManager : Singleton<SpawnManager>
         else
         {
             var enemyLvData = DataManager.Instance.enemyLevelDataList[emenyId];
-            if(enemyLvData.PrevWave < _currentWaveInfo.ID)
+            if(enemyLvData.prevWave < _currentWaveInfo.ID)
             {
-                enemyLvData.PrevWave = _currentWaveInfo.ID;
-                enemyLvData.Level++;
+                enemyLvData.prevWave = _currentWaveInfo.ID;
+                enemyLvData.level++;
             }
         }
     }

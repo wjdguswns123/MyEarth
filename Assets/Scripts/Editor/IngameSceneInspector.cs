@@ -5,39 +5,39 @@ using System.Collections;
 //[CustomEditor(typeof(IngameScene))]
 public class IngameSceneInspector : Editor
 {
-    IngameScene targetScene;
+    private IngameScene _targetScene;
 
     private void OnEnable()
     {
-        targetScene = target as IngameScene;
+        _targetScene = target as IngameScene;
     }
 
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
 
-        if(targetScene.ingameScenes == null)
+        if(_targetScene.ingameScenes == null)
         {
-            targetScene.ingameScenes = new IngameSceneInfo[1];
+            _targetScene.ingameScenes = new IngameSceneInfo[1];
         }
 
-        int count = EditorGUILayout.IntField("Scene Count", targetScene.ingameScenes.Length);
-        if(targetScene.ingameScenes.Length != count)
+        int count = EditorGUILayout.IntField("Scene Count", _targetScene.ingameScenes.Length);
+        if(_targetScene.ingameScenes.Length != count)
         {
             IngameSceneInfo[] scenes = new IngameSceneInfo[count];
 
             for(int i = 0; i < count; ++i)
             {
-                if(i < targetScene.ingameScenes.Length)
+                if(i < _targetScene.ingameScenes.Length)
                 {
-                    scenes[i] = targetScene.ingameScenes[i];
+                    scenes[i] = _targetScene.ingameScenes[i];
                 }
                 else
                 {
                     scenes[i] = new IngameSceneInfo();
                 }
             }
-            targetScene.ingameScenes = scenes;
+            _targetScene.ingameScenes = scenes;
         }
 
         if(GUI.changed)
